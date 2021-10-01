@@ -1,0 +1,13 @@
+from utils.primitives import Line, Circle, Rectangle, Stop
+from utils.modding import initialize, finalize
+
+initialize()
+
+#$#$ Program START
+{%- for item in items %}
+Rectangle({{item.c1}}, {{item.c2}})
+{%- endfor %}
+Stop()
+#$#$ Program END
+
+finalize(fname=__file__)

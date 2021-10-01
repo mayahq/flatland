@@ -1,0 +1,13 @@
+from utils.primitives import Line, Circle, Rectangle, Stop
+from utils.modding import initialize, finalize
+
+initialize()
+
+#$#$ Program START
+{%- for item in items %}
+Circle(({{item.x}}, {{item.y}}), {{item.r}})
+{%- endfor %}
+Stop()
+#$#$ Program END
+
+finalize(fname=__file__)
