@@ -25,6 +25,11 @@ def Stop(turtle=None):
     if turtle is None:
         turtle = config.TURTLE
 
+def Warp(coord1, turtle=None):
+    if turtle is None:
+        turtle = config.TURTLE
+    turtle.moveto(*coord1)
+
 def Move(n, turtle=None):
     if turtle is None:
         turtle = config.TURTLE

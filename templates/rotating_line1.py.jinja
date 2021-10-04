@@ -1,0 +1,15 @@
+from utils.primitives import Line, Circle, Rectangle, Stop, Move, Turn, Warp
+from utils.modding import initialize, finalize
+
+initialize()
+
+#$#$ Program START
+Warp({{items.start}})
+{%- for i in range(items.N) %}
+Move({{items.step}})
+Turn({{items.theta}})
+{%- endfor %}
+Stop()
+#$#$ Program END
+
+finalize(fname=__file__)
