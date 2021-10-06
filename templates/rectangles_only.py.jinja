@@ -5,7 +5,7 @@ initialize()
 
 #$#$ Program START
 {%- for item in items %}
-Rectangle({{item.c1}}, {{item.c2}})
+Rectangle({{item.c1}}, {{item.l}}, {{item.b}}, {{item.theta}})
 {%- endfor %}
 Stop()
 #$#$ Program END

@@ -6,11 +6,11 @@ GENERATE_NODEID = lambda: "%08x" % (random.randrange(16 ** 8))
 
 CircleParams = namedtuple("CircleParams", ["x", "y", "r"])
 LineParams = namedtuple("LineParams", ["c1", "c2"])
-RectangleParams = namedtuple("RectangleParams", ["c1", "c2"])
+RectangleParams = namedtuple("RectangleParams", ["c1", "l", "b", "theta"])
 RotLine1Params = namedtuple("RotLine1Params", ["start", "N", "step", "theta"])
 
 
-def get_circles(N, xmin=-128, xmax=128, ymin=-128, ymax=128, rmin=1, rmax=50):
+def get_circles(N, xmin=-96, xmax=96, ymin=-96, ymax=96, rmin=3, rmax=50):
     return [
         CircleParams(
             random.randint(xmin, xmax),
@@ -31,11 +31,13 @@ def get_lines(N, xmin=-128, xmax=128, ymin=-128, ymax=128):
     ]
 
 
-def get_rectangles(N, xmin=-128, xmax=128, ymin=-128, ymax=128):
+def get_rectangles(N, xmin=-96, xmax=96, ymin=-96, ymax=96):
     return [
         RectangleParams(
             (random.randint(xmin, xmax), random.randint(ymin, ymax)),
-            (random.randint(xmin, xmax), random.randint(ymin, ymax)),
+            random.randint(xmin, xmax),
+            random.randint(ymin, ymax),
+            random.randint(0, 181),
         )
         for i in range(N)
     ]
@@ -44,9 +46,9 @@ def get_rectangles(N, xmin=-128, xmax=128, ymin=-128, ymax=128):
 def get_rotmove1(N, xmin=-48, xmax=48, ymin=-48, ymax=48):
     return RotLine1Params(
         start=(random.randint(xmin, xmax), random.randint(ymin, ymax)),
-        N=random.randint(5, 128),
-        step=random.randint(5, 128),
-        theta=random.randint(0, 180),
+        N=random.randint(20, 96),
+        step=random.randint(20, 96),
+        theta=random.randint(0, 181),
     )
 
 
@@ -68,7 +70,7 @@ def write_template(tp, num_files):
 
     subname = template_map[tp].split(".")[0]
     for i in range(1, num_files + 1):
-        src = tmp.render(items=func_map[tp](N=random.randint(1, 25)))
+        src = tmp.render(items=func_map[tp](N=random.randint(1, 15)))
         fname = f"tmp_{subname}_{GENERATE_NODEID()}.py"
         print(f"writing file {i}, {fname}")
         with open(fname, "w") as f:
@@ -76,10 +78,10 @@ def write_template(tp, num_files):
 
 
 def main():
-    write_template("circles", 1)
-    write_template("rectangles", 1)
-    write_template("lines", 1)
-    write_template("rotmove1", 10)
+    write_template("circles", 5)
+    write_template("rectangles", 5)
+    write_template("lines", 5)
+    write_template("rotmove1", 5)
 
 
 if __name__ == "__main__":

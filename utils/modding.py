@@ -1,3 +1,4 @@
+import json
 from tkinter import Tk, Canvas
 from turtle import TurtleScreen as BaseScreen, RawTurtle as BaseTurtle
 from PIL import Image
@@ -53,6 +54,8 @@ class Turtle(BaseTurtle):
         self.speed(0)
         self.width(2)
         self.hideturtle()
+        self.assembly = []
+        self.cur_id = 0
 
     def moveto(self, x, y=None):
         self.penup()
@@ -60,9 +63,16 @@ class Turtle(BaseTurtle):
         self.pendown()
 
     def moveby(self, x=0, y=0):
+        sx, sy = self.position()
         self.penup()
-        self.goto(self.x() + x, self.y() + y)
+        self.goto(sx+x, sy+y)
         self.pendown()
+
+    def updatelog(self, type_, **kwargs):
+        obj = {"id": self.cur_id, "type": type_}
+        obj.update(kwargs)
+        self.cur_id += 1
+        self.assembly.append(obj)
 
 
 def initialize():
@@ -85,11 +95,14 @@ def initialize():
 
 
 def finalize(fname):
+    turtle = config.TURTLE
     rawname = fname.split(".")[0]
     h, w = 512, 512
     ps = config.CANVAS.postscript(
-        colormode="color", height=h, width=w, x=-h/2, y=-w/2
+        colormode="color", height=h, width=w, x=-h / 2, y=-w / 2
     )
     out = BytesIO(ps.encode("utf-8"))
-    img = Image.open(out).convert("RGBA").resize((256,256))
+    img = Image.open(out).convert("RGBA").resize((256, 256))
     img.save(f"{rawname}.png", lossless=True)
+    with open(f"{rawname}.json", "w") as f:
+        json.dump(turtle.assembly, f, indent=4)

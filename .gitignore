@@ -1,5 +1,6 @@
 # generated template files
 tmp_*.py
+*.json
 *.png
 
 # Byte-compiled / optimized / DLL files
