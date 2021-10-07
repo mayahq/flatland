@@ -1,8 +1,11 @@
 import json
-from tkinter import Tk, Canvas
-from turtle import TurtleScreen as BaseScreen, RawTurtle as BaseTurtle
-from PIL import Image
 from io import BytesIO
+from tkinter import Canvas
+from tkinter import Tk
+from turtle import RawTurtle as BaseTurtle
+from turtle import TurtleScreen as BaseScreen
+
+from PIL import Image
 
 import flatland.utils.config as config
 
@@ -65,7 +68,7 @@ class Turtle(BaseTurtle):
     def moveby(self, x=0, y=0):
         sx, sy = self.position()
         self.penup()
-        self.goto(sx+x, sy+y)
+        self.goto(sx + x, sy + y)
         self.pendown()
 
     def updatelog(self, type_, **kwargs):
@@ -106,3 +109,5 @@ def finalize(fname):
     img.save(f"{rawname}.png", lossless=True)
     with open(f"{rawname}.json", "w") as f:
         json.dump(turtle.assembly, f, indent=4)
+
+    turtle.clear()

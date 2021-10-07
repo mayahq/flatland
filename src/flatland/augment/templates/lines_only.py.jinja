@@ -1,13 +1,7 @@
-from flatland.utils.primitives import Line, Circle, Rectangle, Stop, Move, Turn, Warp
-from flatland.utils.modding import initialize, finalize
-
-initialize()
-
-#$#$ Program START
+{% extends "basic.py.jinja" %}
+{% block program %}
 {%- for item in items %}
 Line({{item.c1}}, {{item.c2}})
 {%- endfor %}
 Stop()
-#$#$ Program END
-
-finalize(fname=__file__)
+{% endblock program %}

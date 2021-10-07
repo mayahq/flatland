@@ -1,4 +1,5 @@
-from setuptools import setup, find_packages
+from setuptools import find_packages
+from setuptools import setup
 
 VERSION = "0.0.1"
 
@@ -11,7 +12,7 @@ setup_info = dict(
     author="Maya Developer Team",
     author_email="humans@mayahq.com",
     url="https://github.com/mayahq/flatland",
-    description="Data Generation for Turtle Program Synthesis",
+    description="Turtle Program Synthesis Toy Problem",
     long_description=long_description,
     long_description_content_type="text/markdown",
     license="",
@@ -30,7 +31,11 @@ setup_info = dict(
         "Programming Language :: Python :: 3.8",
         "Programming Language :: Python :: 3.9",
     ],
-    entry_points={"console_scripts": []},
+    entry_points={
+        "console_scripts": [
+            "flatland-generate=flatland.cli.generator:main",
+        ]
+    },
 )
 
 setup(**setup_info)
