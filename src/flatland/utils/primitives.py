@@ -9,6 +9,7 @@ def Circle(coord, r, turtle=None):
     turtle.moveto(*coord)
     turtle.moveby(0, -r)
     turtle.circle(r)
+    turtle.moveby(0, r)
     turtle.updatelog(**{"type_": "circle", "center": list(coord), "radius": r})
 
 
@@ -24,6 +25,7 @@ def Turn(degrees, turtle=None):
     if turtle is None:
         turtle = config.TURTLE
     turtle.left(degrees)
+
 
 # Move is equivalent to Line
 def Move(n, turtle=None):
@@ -46,15 +48,44 @@ def Warp(coord1, turtle=None):
     turtle.moveto(*coord1)
 
 
-def Rectangle(coord1, l, b, theta=0, turtle=None):
+def Rectangle(coord1, length, breadth, theta=0, turtle=None):
     if turtle is None:
         turtle = config.TURTLE
     turtle.moveto(*coord1)
     turtle.setheading(theta)
-    Move(l)
+    Move(length)
     Turn(90)
-    Move(b)
+    Move(breadth)
     Turn(90)
-    Move(l)
+    Move(length)
     Turn(90)
-    Move(b)
+    Move(breadth)
+
+
+def StickFigure(head, torso1, arms, torso2, legs, turtle=None):
+    if turtle is None:
+        turtle = config.TURTLE
+    Circle((head["x"], head["y"]), head["r"])
+    Warp((head["x"], head["y"] - head["r"]))
+    Turn(torso1["theta"])
+    Move(torso1["length"])
+    curpos = turtle.position()
+    turtle.setheading(0)
+    Turn(arms["theta"])
+    Move(arms["length"])
+    Warp(curpos)
+    Turn(-2 * arms["theta"])
+    Move(arms["length"])
+    Warp(curpos)
+    turtle.setheading(0)
+    Turn(torso2["theta"])
+    Move(torso2["length"])
+    curpos = turtle.position()
+    turtle.setheading(0)
+    Turn(legs["theta"])
+    Move(legs["length"])
+    Warp(curpos)
+    Turn(-2 * legs["theta"])
+    Move(legs["length"])
+    Warp(curpos)
+    turtle.setheading(0)
