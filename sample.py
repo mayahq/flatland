@@ -1,5 +1,5 @@
-from utils.primitives import Line, Circle, Rectangle, Stop
-from utils.modding import initialize, finalize
+from flatland.utils.primitives import Line, Circle, Rectangle, Stop
+from flatland.utils.modding import initialize, finalize
 
 initialize()
 

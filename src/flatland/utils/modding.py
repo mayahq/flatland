@@ -4,7 +4,7 @@ from turtle import TurtleScreen as BaseScreen, RawTurtle as BaseTurtle
 from PIL import Image
 from io import BytesIO
 
-import utils.config as config
+import flatland.utils.config as config
 
 
 class Screen(BaseScreen):

@@ -1,4 +1,4 @@
-import utils.config as config
+import flatland.utils.config as config
 
 # only Circle, Line, and Turn are the actual primitives
 
