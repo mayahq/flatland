@@ -34,6 +34,7 @@ setup_info = dict(
     entry_points={
         "console_scripts": [
             "flatland-generate=flatland.cli.generator:main",
+            "flatland-scoring=flatland.cli.scoring:main",
         ]
     },
 )

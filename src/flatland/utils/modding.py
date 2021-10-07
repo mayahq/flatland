@@ -71,6 +71,11 @@ class Turtle(BaseTurtle):
         self.goto(sx + x, sy + y)
         self.pendown()
 
+    def clear(self):
+        super().clear()
+        self.assembly = []
+        self.cur_id = 0
+
     def updatelog(self, type_, **kwargs):
         obj = {"id": self.cur_id, "type": type_}
         obj.update(kwargs)
