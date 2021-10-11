@@ -5,7 +5,7 @@ import networkx as nx
 import numpy as np
 
 
-LENIENCY = 10
+LENIENCY = 32
 
 
 def num_nodes(flow):
@@ -13,22 +13,30 @@ def num_nodes(flow):
 
 
 def spec_as_dict(s):
-    return {x["id"]: x for x in s}
+    answer = dict()
+    for x in s:
+        if isinstance(x.get("start"), list):
+            x["start"] = np.array(x["start"])
+            x["end"] = np.array(x["end"])
+            x["center"] = 0.5 * (x["start"] + x["end"])
+        elif isinstance(x.get("center"), list):
+            x["center"] = np.array(x["center"])
+        answer[x["id"]] = x
+    return answer
 
 
 def dist2d(p1, p2):
-    return np.sqrt((p1[0] - p2[0]) ** 2 + (p1[1] - p2[1]) ** 2)
+    return np.sqrt(np.sum((p1 - p2) ** 2))
 
 
 def slope(p1, p2):
-    num = np.abs(p1[1] - p2[1])
-    den = max(1e-10, np.abs(p1[0] - p2[0]))
+    num = p1[1] - p2[1]
+    den = max(1e-10, p1[0] - p2[0])
     return num / den
 
 
 def compare_circles(node1, node2):
-    wt = 0.7
-
+    wt = 0
     dist = dist2d(node1["center"], node2["center"])
     wt += 0.15 * max(0, (1 - dist / LENIENCY))
 
@@ -37,12 +45,14 @@ def compare_circles(node1, node2):
     )
     wt += 0.15 * max(0, (1 - raddiff / LENIENCY))
 
+    if wt != 0:
+        wt += 0.7
     wt = np.round(wt, 2)
     return wt
 
 
 def compare_lines(node1, node2):
-    wt = 0.7
+    wt = 0
     dist_a = dist2d(node1["start"], node2["start"]) + dist2d(node1["end"], node2["end"])
     dist_b = dist2d(node1["start"], node2["end"]) + dist2d(node1["end"], node2["start"])
 
@@ -58,6 +68,8 @@ def compare_lines(node1, node2):
     wt += max(0, (1 - slopediff / LENIENCY)) * 0.1
     wt += max(0, (1 - lendiff / LENIENCY)) * 0.1
 
+    if wt != 0:
+        wt += 0.7
     wt = np.round(wt, 2)
     # print(wt, node1, node2)
     return wt
@@ -91,6 +103,13 @@ def create_product_graph(nmap, flow1, flow2):
         for k1b, k2b, wtb in nmap:
             # assert one-to-one mapping
             if k1a == k1b or k2a == k2b:
+                continue
+
+            # can't just map everything, so there needs to some check
+            # of "common substructure" here
+            dist_1 = dist2d(flow1[k1a]["center"], flow1[k1b]["center"])
+            dist_2 = dist2d(flow2[k2a]["center"], flow2[k2b]["center"])
+            if np.abs(dist_1 - dist_2) > LENIENCY:
                 continue
 
             # add edge to product graph
@@ -164,7 +183,12 @@ def find_correspondence(pgraph, nmap, flow1, flow2):
         return small_graph_corr(pgraph, nmap, flow1, flow2)
     else:
         # TODO: weight-based cliques may need a C impl <07-09-21, ahgamut> #
-        print("large graph incoming")
+        print(
+            "large graph computation",
+            f"V = {len(nmap)}",
+            f"E = {len(pgraph)}",
+            density(pgraph, nmap),
+        )
         return large_graph_corr(pgraph, nmap, flow1, flow2)
 
 

@@ -1,7 +1,8 @@
 # generated template files
 tmp_*.py
-outputs/*.json
-outputs/*.png
+outputs*/*.json
+outputs*/*.png
+*.csv
 
 # Byte-compiled / optimized / DLL files
 __pycache__/

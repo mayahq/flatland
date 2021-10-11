@@ -35,6 +35,7 @@ setup_info = dict(
         "console_scripts": [
             "flatland-generate=flatland.cli.generator:main",
             "flatland-scoring=flatland.cli.scoring:main",
+            "flatland-ddist=flatland.cli.domain_distance:main",
         ]
     },
 )
