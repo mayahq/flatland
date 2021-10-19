@@ -1,16 +1,21 @@
 import flatland.utils.config as config
 
-# only Circle, Line, and Turn are the actual primitives
 
-
-def Circle(coord, r, turtle=None):
+def Circle(coord, r, theta=360, turtle=None):
     if turtle is None:
         turtle = config.TURTLE
     turtle.moveto(*coord)
     turtle.moveby(0, -r)
-    turtle.circle(r)
-    turtle.moveby(0, r)
-    turtle.updatelog(**{"type_": "circle", "center": list(coord), "radius": r})
+    turtle.circle(r, theta)
+    turtle.moveto(*coord)
+    turtle.updatelog(
+        **{
+            "type_": "circle",
+            "center": {"x": coord[0], "y": coord[1]},
+            "radius": r,
+            "theta": theta,
+        }
+    )
 
 
 def Line(coord1, coord2, turtle=None):
@@ -18,7 +23,13 @@ def Line(coord1, coord2, turtle=None):
         turtle = config.TURTLE
     turtle.moveto(*coord1)
     turtle.goto(*coord2)
-    turtle.updatelog(**{"type_": "line", "start": list(coord1), "end": list(coord2)})
+    turtle.updatelog(
+        **{
+            "type_": "line",
+            "start": {"x": coord1[0], "y": coord1[1]},
+            "end": {"x": coord2[0], "y": coord2[1]},
+        }
+    )
 
 
 def Turn(degrees, turtle=None):
@@ -31,10 +42,16 @@ def Turn(degrees, turtle=None):
 def Move(n, turtle=None):
     if turtle is None:
         turtle = config.TURTLE
-    startpos = turtle.position()
+    coord1 = turtle.position()
     turtle.forward(n)
-    endpos = turtle.position()
-    turtle.updatelog(**{"type_": "line", "start": list(startpos), "end": list(endpos)})
+    coord2 = turtle.position()
+    turtle.updatelog(
+        **{
+            "type_": "line",
+            "start": {"x": coord1[0], "y": coord1[1]},
+            "end": {"x": coord2[0], "y": coord2[1]},
+        }
+    )
 
 
 def Stop(turtle=None):

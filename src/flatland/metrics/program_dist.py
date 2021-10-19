@@ -1,6 +1,8 @@
 # distance between two programs
 # compare the spec and generate a mapping using the association graph
 #
+import math
+
 import networkx as nx
 import numpy as np
 
@@ -14,24 +16,23 @@ def num_nodes(flow):
 
 def spec_as_dict(s):
     answer = dict()
-    for x in s:
-        if isinstance(x.get("start"), list):
-            x["start"] = np.array(x["start"])
-            x["end"] = np.array(x["end"])
-            x["center"] = 0.5 * (x["start"] + x["end"])
-        elif isinstance(x.get("center"), list):
-            x["center"] = np.array(x["center"])
-        answer[x["id"]] = x
+    for node in s:
+        if node["type"] == "line":
+            node["center"] = {
+                "x": 0.5 * (node["start"]["x"] + node["end"]["x"]),
+                "y": 0.5 * (node["start"]["y"] + node["end"]["y"]),
+            }
+        answer[node["id"]] = node
     return answer
 
 
 def dist2d(p1, p2):
-    return np.sqrt(np.sum((p1 - p2) ** 2))
+    return math.sqrt((p1["x"] - p2["x"]) ** 2 + (p1["y"] - p2["y"]) ** 2)
 
 
 def slope(p1, p2):
-    num = p1[1] - p2[1]
-    den = max(1e-10, p1[0] - p2[0])
+    num = p1["y"] - p2["y"]
+    den = max(1e-10, p1["x"] - p2["x"])
     return num / den
 
 
