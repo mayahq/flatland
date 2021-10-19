@@ -1,28 +1,27 @@
 # recursive comparison of properties
+import numpy as np
 
 
 def compare_subparts(part1, part2):
     if isinstance(part1, (int, float)):
-        # adding 128 because
-        # the image range starts at
-        # (-128, -128)
-        a = max(part1, part2) + 128
-        b = min(part1, part2) + 128
-        return b / a
+        a = max(part1, part2)
+        b = min(part1, part2)
+        answer = b / a
     elif isinstance(part1, str):
-        return part1 == part2
+        answer = float(part1 == part2)
     elif isinstance(part1, list):
         den = len(part1)
         if den != len(part2):
-            return 0
+            return 0.0
         num = sum(compare_subparts(part1[i], part2[i]) for i in range(den))
-        return num / den
+        answer = num / den
     elif isinstance(part1, dict):
         common_keys = set(part1.keys()) & set(part2.keys())
         num = sum(compare_subparts(part1[k], part2[k]) for k in common_keys)
-        return (num / len(part1)) * (num / len(part2))
+        answer = (num / len(part1)) * (num / len(part2))
     else:
-        return 0
+        answer = 0
+    return np.round(answer, 2)
 
 
 def compare_nodes(node1, node2):
