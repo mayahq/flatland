@@ -8,6 +8,7 @@ import numpy as np
 import pandas as pd
 
 from flatland.metrics import program_distance
+from flatland.metrics.distances import FUNCTION_MAP
 
 
 def check_folder(folder):
@@ -25,23 +26,28 @@ def check_csv(fname):
     raise ValueError(f"{fname} is not a .csv")
 
 
-def run(train_set, test_set, output_fname):
+def run(train_set, test_set, output_fname, metric_name):
     # print(train_set, test_set)
-    scores = np.zeros((len(test_set), len(train_set)), np.float32)
+    final_scores = np.zeros((len(test_set), 1), np.float32)
+    scores = np.zeros(len(train_set), np.float32)
+    total = len(train_set) * len(test_set)
+    count = 0
     for i, t_dash in enumerate(test_set):
         p_dash = json.load(open(t_dash))
         for j, t in enumerate(train_set):
-            print(f"scoring {t_dash} and {t}")
+            count += 1
+            print(f"{count}/{total}: scoring {t_dash} and {t}", end="\r")
             p = json.load(open(t))
-            scores[i, j] = program_distance(p_dash, p)
-    # print(scores)
-    GD = np.mean(np.min(scores, axis=0))
+            scores[j] = program_distance(p_dash, p, metric_name)
+        final_scores[i] = np.min(scores[j])
+    DD = np.mean(final_scores)
     score_df = pd.DataFrame(
-        scores,
-        columns=[os.path.basename(x) for x in train_set],
+        final_scores,
+        columns=["domain_distance"],
         index=[os.path.basename(x) for x in test_set],
     )
-    print(GD)
+    print()
+    print("domain domain_distance is", DD)
     score_df.to_csv(output_fname, header=True, index=True)
 
 
@@ -49,6 +55,8 @@ def main():
     parser = argparse.ArgumentParser(
         prog="flatland-ddist",
         description="find the domain distance between given sets by pairwise comparisons",
+        epilog="available distance metrics:\n" + "\n".join(FUNCTION_MAP.keys()),
+        formatter_class=argparse.ArgumentDefaultsHelpFormatter,
     )
     parser.add_argument(
         "-a",
@@ -66,9 +74,12 @@ def main():
         default="results.csv",
         help="output score matrix to a CSV",
     )
+    parser.add_argument(
+        "-d", "--metric", default="euclidean", help="distance metric to use"
+    )
 
     d = parser.parse_args()
-    run(d.train_set, d.test_set, d.output)
+    run(d.train_set, d.test_set, d.output, d.metric)
 
 
 if __name__ == "__main__":
