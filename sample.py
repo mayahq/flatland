@@ -9,9 +9,9 @@ initialize()
 
 # <> Program START
 
-Circle((0, 0), 10)
-Line((0, 0), (50, 50))
-Rectangle((20, 20), l=15, b=22, theta=20)
+Circle((64, 64), 10)
+Line((64, 64), (114, 114))
+Rectangle((74, 74), length=15, breadth=22, theta=20)
 Stop()
 
 # <> Program END

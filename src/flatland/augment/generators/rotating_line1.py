@@ -7,9 +7,9 @@ from .utils import GENERATE_ID
 TurnMove1Params = namedtuple("TurnMove1Params", ["start", "N", "step", "theta"])
 
 
-def generate(N=None, xmin=-48, xmax=48, ymin=-48, ymax=48):
+def generate(N=None, xmin=32, xmax=96, ymin=32, ymax=96):
     if N is None:
-        N = random.randint(5, 80)
+        N = random.randint(5, 20)
     return {
         "items": TurnMove1Params(
             start=(random.randint(xmin, xmax), random.randint(ymin, ymax)),

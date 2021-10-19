@@ -7,9 +7,9 @@ from .utils import GENERATE_ID
 RectangleParams = namedtuple("RectangleParams", ["c1", "l", "b", "theta"])
 
 
-def generate(N=None, xmin=-96, xmax=96, ymin=-96, ymax=96):
+def generate(N=None, xmin=0, xmax=96, ymin=0, ymax=96):
     if N is None:
-        N = random.randint(1, 25)
+        N = random.randint(1, 5)
     return {
         "items": [
             RectangleParams(

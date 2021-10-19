@@ -6,9 +6,9 @@ from .utils import GENERATE_ID
 LineParams = namedtuple("LineParams", ["c1", "c2"])
 
 
-def generate(N=None, xmin=-128, xmax=128, ymin=-128, ymax=128):
+def generate(N=None, xmin=0, xmax=128, ymin=0, ymax=128):
     if N is None:
-        N = random.randint(1, 25)
+        N = random.randint(1, 5)
     return {
         "items": [
             LineParams(

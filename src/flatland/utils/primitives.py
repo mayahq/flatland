@@ -11,9 +11,9 @@ def Circle(coord, r, theta=360, turtle=None):
     turtle.updatelog(
         **{
             "type_": "circle",
-            "center": {"x": coord[0], "y": coord[1]},
-            "radius": r,
-            "theta": theta,
+            "center": {"x": float(coord[0]), "y": float(coord[1])},
+            "radius": float(r),
+            "theta": float(theta),
         }
     )
 
@@ -26,8 +26,8 @@ def Line(coord1, coord2, turtle=None):
     turtle.updatelog(
         **{
             "type_": "line",
-            "start": {"x": coord1[0], "y": coord1[1]},
-            "end": {"x": coord2[0], "y": coord2[1]},
+            "start": {"x": float(coord1[0]), "y": float(coord1[1])},
+            "end": {"x": float(coord2[0]), "y": float(coord2[1])},
         }
     )
 
@@ -48,8 +48,8 @@ def Move(n, turtle=None):
     turtle.updatelog(
         **{
             "type_": "line",
-            "start": {"x": coord1[0], "y": coord1[1]},
-            "end": {"x": coord2[0], "y": coord2[1]},
+            "start": {"x": float(coord1[0]), "y": float(coord1[1])},
+            "end": {"x": float(coord2[0]), "y": float(coord2[1])},
         }
     )
 

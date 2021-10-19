@@ -8,16 +8,16 @@ HeadParams = namedtuple("HeadParams", ["x", "y", "r"])
 FigureParams = namedtuple("FigureParams", ["head", "torso1", "arms", "torso2", "legs"])
 
 
-def generate(N=None, xmin=-96, xmax=96, ymin=-96, ymax=96):
+def generate(N=None, xmin=20, xmax=96, ymin=20, ymax=96):
     if N is None:
-        N = random.randint(1, 6)
+        N = random.randint(1, 2)
     return {
         "items": [
             FigureParams(
                 head=dict(
                     HeadParams(
-                        random.randint(xmin // 2, xmax // 2),
-                        random.randint(ymin // 2, ymax // 2),
+                        random.randint(xmin, xmax),
+                        random.randint(xmin, ymax),
                         random.randint(10, 30),
                     )._asdict()
                 ),

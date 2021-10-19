@@ -55,7 +55,7 @@ class Turtle(BaseTurtle):
     def __init__(self, screen):
         super().__init__(screen)
         self.speed(0)
-        self.width(2)
+        self.width(1)
         self.hideturtle()
         self.assembly = []
         self.cur_id = 0
@@ -91,11 +91,11 @@ def initialize():
         config.ROOT.withdraw()
 
         config.CANVAS = Canvas(master=config.ROOT, width=256, height=256)
-        config.CANVAS.configure(scrollregion=(-128, -128, 128, 128))
+        config.CANVAS.configure(scrollregion=(0, 0, 256, 256))
         BaseScreen._canvas = config.CANVAS
         BaseScreen._root = config.ROOT
         config.SCREEN = Screen(config.CANVAS)
-        config.SCREEN.setworldcoordinates(-64, -64, 64, 64)
+        config.SCREEN.setworldcoordinates(0, 0, 128, 128)
         config.TURTLE = Turtle(config.SCREEN)
 
         assert config.TURTLE.getscreen() == config.SCREEN
@@ -105,9 +105,12 @@ def initialize():
 def finalize(fname):
     turtle = config.TURTLE
     rawname = fname.split(".")[0]
-    h, w = 512, 512
+    h, w = 256, 256
     ps = config.CANVAS.postscript(
-        colormode="color", height=h, width=w, x=-h / 2, y=-w / 2
+        colormode="color",
+        height=h,
+        width=w,
+        y=-h,
     )
     out = BytesIO(ps.encode("utf-8"))
     img = Image.open(out).convert("RGBA").resize((256, 256))
