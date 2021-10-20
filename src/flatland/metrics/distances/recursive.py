@@ -4,9 +4,8 @@ import numpy as np
 
 def compare_subparts(part1, part2):
     if isinstance(part1, (int, float)):
-        a = max(part1, part2)
-        b = min(part1, part2)
-        answer = b / a
+        # 256 because image size is 256x256
+        answer = 1 - abs(part1 - part2) / 256
     elif isinstance(part1, str):
         answer = float(part1 == part2)
     elif isinstance(part1, list):
