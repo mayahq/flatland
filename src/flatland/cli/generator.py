@@ -47,11 +47,13 @@ def write_template(tp, num_files, N=None, should_exec=False):
         params = func(N)
         fname = params["filename"]
         src = tmp.render(**params)
-        print(f"Writing file: {fname}")
+        print(f"Writing file {i}/{num_files}: {fname}", end="\r")
         with open(fname, "w") as f:
             f.write(src)
         if should_exec:
             exec(src, dict(), dict())
+
+    print("")
 
 
 def main():
