@@ -47,8 +47,8 @@ def create_product_graph(nmap, flow1, flow2, edge_indicator):
                 continue
 
             # can't just map everything, so there needs to some check
-            # of "common substructure" here
-            if edge_indicator(flow1[k1a], flow1[k1b], flow2[k2a], flow2[k2b]):
+            # of "common substructure" here if you want speed
+            if True or edge_indicator(flow1[k1a], flow1[k1b], flow2[k2a], flow2[k2b]):
                 # add edge to product graph
                 ind1 = nmap.index((k1a, k2a, wta))
                 ind2 = nmap.index((k1b, k2b, wtb))

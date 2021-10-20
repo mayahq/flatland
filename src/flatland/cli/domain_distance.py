@@ -79,6 +79,8 @@ def main():
     )
 
     d = parser.parse_args()
+    if d.output == "results.csv":
+        d.output = f"results_{d.metric}.csv"
     run(d.train_set, d.test_set, d.output, d.metric)
 
 
