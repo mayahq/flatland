@@ -40,7 +40,7 @@ def run(train_set, test_set, output_fname, metric_name):
             print(f"{count}/{total}: scoring {t_dash} and {t}", end="\r")
             p = json.load(open(t))
             scores[j] = program_distance(p_dash, p, metric_name)
-        final_scores[i] = np.min(scores[j])
+        final_scores[i] = np.min(scores)
     DD = np.mean(final_scores)
     score_df = pd.DataFrame(
         final_scores,
@@ -48,7 +48,7 @@ def run(train_set, test_set, output_fname, metric_name):
         index=[os.path.basename(x) for x in test_set],
     )
     print()
-    print("domain domain_distance is", DD)
+    print("domain_distance is", DD)
     score_df.to_csv(output_fname, header=True, index=True)
 
 
