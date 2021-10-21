@@ -4,7 +4,7 @@ import numpy as np
 
 def compare_subparts(part1, part2):
     if isinstance(part1, (int, float)):
-        answer = abs(part1 - part2) / 128
+        answer = 1 - abs(part1 - part2) / 128
     elif isinstance(part1, str):
         answer = float(part1 == part2)
     elif isinstance(part1, list):
