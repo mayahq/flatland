@@ -9,6 +9,7 @@ import pandas as pd
 
 from flatland.metrics import program_distance
 from flatland.metrics.distances import FUNCTION_MAP
+from flatland.metrics.distances import LENIENCY
 
 
 def check_folder(folder):
@@ -80,7 +81,7 @@ def main():
 
     d = parser.parse_args()
     if d.output == "results.csv":
-        d.output = f"results_{d.metric}.csv"
+        d.output = f"results_{d.metric}{LENIENCY}.csv"
     run(d.train_set, d.test_set, d.output, d.metric)
 
 
