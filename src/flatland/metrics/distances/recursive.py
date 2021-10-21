@@ -39,7 +39,7 @@ def compare_lines(node1, node2):
     num = 0
     den = 0
     for k in node1.keys():
-        if k in ("id", "start", "end"):
+        if k in ("id", "start", "end", "center"):
             continue
         a = compare_subparts(node1[k], node2[k])
         num += a
