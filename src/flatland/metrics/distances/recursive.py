@@ -4,7 +4,9 @@ import numpy as np
 
 def compare_subparts(part1, part2):
     if isinstance(part1, (int, float)):
-        answer = 1 - abs(part1 - part2) / 128
+        a = max(part1, part2)
+        b = min(part1, part2)
+        answer = b / a
     elif isinstance(part1, str):
         answer = float(part1 == part2)
     elif isinstance(part1, list):
@@ -70,4 +72,6 @@ def node_weighter(node1, node2):
 
 
 def edge_indicator(node1a, node1b, node2a, node2b):
-    return True
+    dist_1 = compare_subparts(node1a["center"], node1b["center"])
+    dist_2 = compare_subparts(node2a["center"], node2b["center"])
+    return abs(dist_1 - dist_2) <= 0.05
