@@ -2,9 +2,13 @@
 import numpy as np
 
 
+def numdiff(a, b, normalize=128):
+    return 1 - abs(a - b) / normalize
+
+
 def compare_subparts(part1, part2):
     if isinstance(part1, (int, float)):
-        answer = 1 - abs(part1 - part2) / 128
+        answer = numdiff(part1, part2)
     elif isinstance(part1, str):
         answer = float(part1 == part2)
     elif isinstance(part1, list):
@@ -26,11 +30,13 @@ def compare_circles(node1, node2):
     num = 0
     den = 0
     for k in node1.keys():
-        if k == "id":
+        if k in ("id", "theta"):
             continue
         a = compare_subparts(node1[k], node2[k])
         num += a
         den += 1
+    num += numdiff(node1["theta"] % 360, node2["theta"] % 360, 360)
+    den += 1
     wt = num / den
     return wt
 
