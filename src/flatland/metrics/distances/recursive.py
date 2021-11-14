@@ -3,7 +3,7 @@ import numpy as np
 
 
 def numdiff(a, b, normalize=128):
-    return 1 - abs(a - b) / normalize
+    return max(0, 1 - abs(a - b) / normalize)
 
 
 def compare_subparts(part1, part2):
