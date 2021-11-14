@@ -1,4 +1,6 @@
 # generated template files
+train/
+test/
 tmp_*.py
 outputs*/*.json
 outputs*/*.png

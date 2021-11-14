@@ -60,16 +60,16 @@ maketrain () {
     echo "creating train folder..."
     mkdir -p ./train
     echo "generating training data...."
-    flatland-generate -d circles -N 1 -n "$TRAINDATA" -x
-    flatland-generate -d circles -N 2 -n "$TRAINDATA" -x
-    flatland-generate -d circles -N 3 -n "$TRAINDATA" -x
-    flatland-generate -d circles -N 4 -n "$TRAINDATA" -x
-    flatland-generate -d circles -N 5 -n "$TRAINDATA" -x
-    flatland-generate -d lines -N 1 -n "$TRAINDATA" -x
-    flatland-generate -d lines -N 2 -n "$TRAINDATA" -x
-    flatland-generate -d lines -N 3 -n "$TRAINDATA" -x
-    flatland-generate -d lines -N 4 -n "$TRAINDATA" -x
-    flatland-generate -d lines -N 5 -n "$TRAINDATA" -x
+    flatland-generate -d circles -N 1 -n "$TRAINDATA" -x -o ./train
+    flatland-generate -d circles -N 2 -n "$TRAINDATA" -x -o ./train
+    flatland-generate -d circles -N 3 -n "$TRAINDATA" -x -o ./train
+    flatland-generate -d circles -N 4 -n "$TRAINDATA" -x -o ./train
+    flatland-generate -d circles -N 5 -n "$TRAINDATA" -x -o ./train
+    flatland-generate -d lines -N 1 -n "$TRAINDATA" -x -o ./train
+    flatland-generate -d lines -N 2 -n "$TRAINDATA" -x -o ./train
+    flatland-generate -d lines -N 3 -n "$TRAINDATA" -x -o ./train
+    flatland-generate -d lines -N 4 -n "$TRAINDATA" -x -o ./train
+    flatland-generate -d lines -N 5 -n "$TRAINDATA" -x -o ./train
     echo ""
 }
 
@@ -77,11 +77,11 @@ maketesteasy() {
     echo "creating test/easy folder..."
     mkdir -p "./test/easy"
     echo "generating testing data...."
-    flatland-generate -d circles -N 1 -n "$TESTDATA" -x
-    flatland-generate -d lines -N 1 -n "$TESTDATA" -x
-    flatland-generate -d circles -N 2 -n "$TESTDATA" -x
-    flatland-generate -d lines -N 2 -n "$TESTDATA" -x
-    flatland-generate -d circles -N 3 -n "$TESTDATA" -x
+    flatland-generate -d circles -N 1 -n "$TESTDATA" -x -o ./test/easy
+    flatland-generate -d lines -N 1 -n "$TESTDATA" -x -o ./test/easy
+    flatland-generate -d circles -N 2 -n "$TESTDATA" -x -o ./test/easy
+    flatland-generate -d lines -N 2 -n "$TESTDATA" -x -o ./test/easy
+    flatland-generate -d circles -N 3 -n "$TESTDATA" -x -o ./test/easy
     echo ""
 }
 
@@ -89,10 +89,10 @@ maketestmedi() {
     echo "creating test/medium folder..."
     mkdir -p "./test/medium"
     echo "generating testing data...."
-    flatland-generate -d circles -N 5 -n "$TESTDATA" -x
-    flatland-generate -d lines -N 4 -n "$TESTDATA" -x
-    flatland-generate -d rectangles -N 1 -n "$TESTDATA" -x
-    flatland-generate -d circle_in_box -N 1 -n "$TESTDATA" -x
+    flatland-generate -d circles -N 5 -n "$TESTDATA" -x -o ./test/medium
+    flatland-generate -d lines -N 4 -n "$TESTDATA" -x -o ./test/medium
+    flatland-generate -d rectangles -N 1 -n "$TESTDATA" -x -o ./test/medium
+    flatland-generate -d circle_in_box -N 1 -n "$TESTDATA" -x -o ./test/medium
     echo ""
 }
 
@@ -100,10 +100,10 @@ maketesthard() {
     echo "creating test/hard folder..."
     mkdir -p "./test/hard"
     echo "generating testing data...."
-    flatland-generate -d rectangles -N 2 -n "$TESTDATA" -x
-    flatland-generate -d circle_in_box -N 2 -n "$TESTDATA" -x
-    flatland-generate -d rotline1 -n "$TESTDATA" -x
-    flatland-generate -d stickfigure1 -N 1 -n "$TESTDATA" -x
+    flatland-generate -d rectangles -N 2 -n "$TESTDATA" -x -o ./test/hard
+    flatland-generate -d circle_in_box -N 2 -n "$TESTDATA" -x -o ./test/hard
+    flatland-generate -d rotline1 -n "$TESTDATA" -x -o ./test/hard
+    flatland-generate -d stickfigure1 -N 1 -n "$TESTDATA" -x -o ./test/hard
     echo ""
 }
 
