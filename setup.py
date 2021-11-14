@@ -23,6 +23,7 @@ setup_info = dict(
         "numpy==1.19.2",
         "networkx==2.5.1",
         "Pillow==8.3.1",
+        "cliquematch==2.2.0",
     ],
     extras_require={},
     zip_safe=False,
@@ -36,6 +37,7 @@ setup_info = dict(
             "flatland-generate=flatland.cli.generator:main",
             "flatland-scoring=flatland.cli.scoring:main",
             "flatland-ddist=flatland.cli.domain_distance:main",
+            "flatland-sample=flatland.cli.sample:main",
         ]
     },
 )

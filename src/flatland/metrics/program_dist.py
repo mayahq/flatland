@@ -1,5 +1,5 @@
 # distance between two programs
-# compare the spec and generate a mapping using the association graph
+# compare the JSON and generate a subset mapping using the association graph
 #
 import math
 
@@ -153,5 +153,5 @@ def compare_specs(s1, s2, distance):
     return 1 - similarity
 
 
-def metric(spec1, spec2, distance="euclidean"):
+def metric(spec1, spec2, distance="recursive"):
     return compare_specs(spec1, spec2, distance)

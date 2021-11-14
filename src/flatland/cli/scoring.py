@@ -50,7 +50,7 @@ def main():
     parser.add_argument("file1", type=str)
     parser.add_argument("file2", type=str)
     parser.add_argument(
-        "-d", "--metric", default="euclidean", help="distance metric to use"
+        "-d", "--metric", default="recursive", help="distance metric to use"
     )
 
     d = parser.parse_args()

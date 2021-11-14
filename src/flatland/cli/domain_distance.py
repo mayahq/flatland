@@ -76,7 +76,7 @@ def main():
         help="output score matrix to a CSV",
     )
     parser.add_argument(
-        "-d", "--metric", default="euclidean", help="distance metric to use"
+        "-d", "--metric", default="recursive", help="distance metric to use"
     )
 
     d = parser.parse_args()
