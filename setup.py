@@ -21,6 +21,7 @@ setup_info = dict(
     install_requires=[
         "jinja2==2.11.3",
         "numpy==1.19.2",
+        "pandas==1.2.3",
         "networkx==2.5.1",
         "Pillow==8.3.1",
         "cliquematch==2.2.0",
