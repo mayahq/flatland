@@ -54,6 +54,106 @@ Atom = (Symbol, Number)
 Exp = (Atom, List)
 
 
+class DAG(Procedure):
+    def __init__(self, body, env):
+        super().__init__((), body, env)
+
+    def __call__(self, node):
+        env = Env((), (), self.env)
+        for expr in self.body:
+            evalf(expr, env)
+        env[node]()
+
+
+class Node(Procedure):
+    def __init__(self, body, env):
+        super().__init__((), body, env)
+        self.input = None
+        self.outputs = []
+        self.targets = []
+
+    def reset(self):
+        pass
+
+    def store(self):
+        xy = config.TURTLE.position()
+        theta = config.TURTLE.heading()
+        config.TURTLE.setheading(0)
+        return xy, theta
+
+    def restore(self, xy, theta):
+        config.TURTLE.setposition(xy)
+        config.TURTLE.setheading(theta)
+
+    def forward(self):
+        if self.targets:
+            l0 = len(self.outputs)
+            # l1 = len(self.targets)
+            for i, node in enumerate(self.targets):
+                node.reset()
+                if i > l0 - 1:
+                    node.input = self.input
+                else:
+                    node.input = self.outputs[i]
+                node()
+
+    def __call__(self):
+        answer = evalf(self.body, Env((), (), self.env))
+        self.forward()
+        return answer
+
+
+class LoopNode(Node):
+    def __init__(self, start, end, body, env):
+        super().__init__(body, env)
+        self.start = start
+        self.end = end
+        self.i = start
+
+    def reset(self):
+        self.i = self.start
+
+    def __call__(self):
+        env = Env(("i"), (self.i,), self.env)
+        while self.i < self.end:
+            for expr in self.body:
+                evalf(expr, env)
+            self.forward()
+            self.i += 1
+        return None
+
+
+class MoveNode(Node):
+    def __init__(self, dist, body, env):
+        super().__init__(body, env)
+        self.dist = evalf(dist, env)
+
+    def __call__(self):
+        config.TURTLE.forward(self.dist)
+        super().__call__()
+
+
+class TurnNode(Node):
+    def __init__(self, theta, body, env):
+        super().__init__(body, env)
+        self.theta = theta
+
+    def __call__(self):
+        config.TURTLE.left(self.theta)
+        super().__call__()
+
+
+def node_builder(tp, *args):
+    if tp == "loop":
+        return LoopNode(*args)
+    elif tp == "move":
+        return MoveNode(*args)
+    elif tp == "turn":
+        return TurnNode(*args)
+    else:
+        raise TypeError(f"invalid node type {tp}")
+
+
 def standard_env() -> Env:
     "An environment with some Scheme standard procedures."
     env = Env()
@@ -96,6 +196,8 @@ def evalf(x, env):
         return env.find(x)[x]
     elif not isinstance(x, List):  # constant
         return x
+    if len(x) == 0:
+        return
     op, *args = x
     if op == "quote":  # quotation
         return args[0]
@@ -103,20 +205,25 @@ def evalf(x, env):
         (test, conseq, alt) = args
         exp = conseq if evalf(test, env) else alt
         return evalf(exp, env)
-    elif op == "loop-upto":
-        varname, terminator, body = args
-        assert isinstance(varname, str)
-        try:
-            varenv = env.find(varname)
-        except AttributeError:
-            varenv = env
-            env[varname] = Number(0)
-        tval = evalf(terminator, env)
-        while varenv[varname] < tval:
-            evalf(body, env)
-            varenv[varname] += 1
-        if varenv is env:
-            env.pop(varname)
+    elif op == "define-node":
+        name, tp, *tpargs = args
+        env[name] = node_builder(tp, *tpargs, env)
+    elif op == "out!":
+        env.outputs.append(eval(args[0]))
+    elif op == "in!":
+        return evalf(env.input, env)
+    elif op == "define-dag":
+        name, body = args
+        env[name] = DAG(body, env)
+    elif op == "link-node":
+        fromnode, tonode = args
+        assert env[fromnode] not in env[tonode].targets, "loop in DAG"
+        env[fromnode].targets.append(env[tonode])
+    elif op == "run-dag":
+        dagname, nodename = args
+        d = env[dagname]
+        assert isinstance(d, DAG)
+        d(nodename)
     elif op == "define":  # definition
         (symbol, exp) = args
         env[symbol] = evalf(exp, env)
@@ -126,18 +233,6 @@ def evalf(x, env):
     elif op == "lambda":  # procedure
         (parms, body) = args
         return Procedure(parms, body, env)
-    elif op == "warp-by":
-        x, y = args
-        x = evalf(x, env)
-        y = evalf(y, env)
-        x0, y0 = config.TURTLE.position()
-        config.TURTLE.moveto(x0 + x, y0 + y)
-    elif op == "move":
-        dist = evalf(args[0], env)
-        config.TURTLE.forward(dist)
-    elif op == "turn":
-        theta = evalf(args[0], env)
-        config.TURTLE.left(theta)
     else:  # procedure call
         proc = evalf(op, env)
         vals = [evalf(arg, env) for arg in args]
