@@ -1,3 +1,17 @@
+> This is a WIP port of `flatland` to be evaluated with a LISP syntax and
+simpler primitives like `move`,`turn`,`warp-by`, and `loop-upto`. LISP
+Interpreter code is from Peter Norvig's [(How to Write a (Lisp) Interpreter (in
+Python))](https://norvig.com/lispy.html), with a few modifications to render the
+image.
+
+> While LISP S-Expressions are not DAGs, they are ASTs, therefore the scoring
+and domain distance functions will need to change to handle the AST structure
+instead. One of the goals is to examine how much recursion+looping in ASTs
+affect program aliasing.
+
+> TODO: convert domain templates, scoring function, and domain-distance
+calculation to use LISP.
+
 # flatland
 
 `flatland` is a toy environment to compute the [`g-index`][gindex] when
