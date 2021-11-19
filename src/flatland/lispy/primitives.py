@@ -124,22 +124,14 @@ class LoopNode(Node):
 
 
 class MoveNode(Node):
-    def __init__(self, dist, body, env):
+    def __init__(self, dist, theta, body, env):
         super().__init__(body, env)
         self.dist = evalf(dist, env)
-
-    def __call__(self):
-        config.TURTLE.forward(self.dist)
-        super().__call__()
-
-
-class TurnNode(Node):
-    def __init__(self, theta, body, env):
-        super().__init__(body, env)
-        self.theta = theta
+        self.theta = evalf(theta, env)
 
     def __call__(self):
         config.TURTLE.left(self.theta)
+        config.TURTLE.forward(self.dist)
         super().__call__()
 
 
@@ -148,8 +140,6 @@ def node_builder(tp, *args):
         return LoopNode(*args)
     elif tp == "move":
         return MoveNode(*args)
-    elif tp == "turn":
-        return TurnNode(*args)
     else:
         raise TypeError(f"invalid node type {tp}")
 
