@@ -1,6 +1,7 @@
 # From Peter Norvig's (How to Write a (Lisp) Interpreter (in Python))
 # https://norvig.com/lispy.html
 # https://norvig.com/lis.py
+import json
 import math
 import operator as op
 
@@ -62,40 +63,51 @@ class DAG(Procedure):
         env = Env((), (), self.env)
         for expr in self.body:
             evalf(expr, env)
+        env[node].store()
         env[node]()
 
 
 class Node(Procedure):
-    def __init__(self, body, env):
+    def __init__(self, name, body, env):
         super().__init__((), body, env)
+        self.name = name
         self.input = None
         self.outputs = []
         self.targets = []
+        self.position = None
+        self.heading = None
 
     def reset(self):
         pass
 
     def store(self):
-        xy = config.TURTLE.position()
-        theta = config.TURTLE.heading()
-        config.TURTLE.setheading(0)
-        return xy, theta
+        self.position = config.TURTLE.position()
+        self.heading = config.TURTLE.heading()
 
-    def restore(self, xy, theta):
-        config.TURTLE.setposition(xy)
-        config.TURTLE.setheading(theta)
+    def restore(self):
+        config.TURTLE.moveto(self.position)
+        config.TURTLE.setheading(self.heading)
 
     def forward(self):
-        if self.targets:
-            l0 = len(self.outputs)
-            # l1 = len(self.targets)
-            for i, node in enumerate(self.targets):
-                node.reset()
-                if i > l0 - 1:
-                    node.input = self.input
-                else:
-                    node.input = self.outputs[i]
-                node()
+        self.store()
+
+        l0 = len(self.outputs)
+        # l1 = len(self.targets)
+        for i, nodename in enumerate(self.targets):
+            node = self.env[nodename]
+            node.reset()
+            if i > l0 - 1:
+                node.input = self.input
+            else:
+                node.input = self.outputs[i]
+
+            if node.position is None:
+                node.position = self.position
+            if node.heading is None:
+                node.heading = self.heading
+
+            node()
+            self.restore()
 
     def __call__(self):
         answer = evalf(self.body, Env((), (), self.env))
@@ -103,15 +115,23 @@ class Node(Procedure):
         return answer
 
 
+def loop_reset(node):
+    node.position = None
+    node.heading = None
+    for n2 in node.targets:
+        loop_reset(node.env[n2])
+
+
 class LoopNode(Node):
-    def __init__(self, start, end, body, env):
-        super().__init__(body, env)
+    def __init__(self, name, start, end, body, env):
+        super().__init__(name, body, env)
         self.start = start
         self.end = end
         self.i = start
 
     def reset(self):
         self.i = self.start
+        loop_reset(self)
 
     def __call__(self):
         env = Env(("i"), (self.i,), self.env)
@@ -124,22 +144,47 @@ class LoopNode(Node):
 
 
 class MoveNode(Node):
-    def __init__(self, dist, theta, body, env):
-        super().__init__(body, env)
+    def __init__(self, name, dist, theta, body, env):
+        super().__init__(name, body, env)
         self.dist = evalf(dist, env)
         self.theta = evalf(theta, env)
 
     def __call__(self):
+        self.restore()
         config.TURTLE.left(self.theta)
         config.TURTLE.forward(self.dist)
         super().__call__()
 
 
-def node_builder(tp, *args):
+class TurnNode(Node):
+    def __init__(self, name, theta, body, env):
+        super().__init__(name, body, env)
+        self.theta = evalf(theta, env)
+
+    def __call__(self):
+        self.restore()
+        config.TURTLE.left(self.theta)
+        if len(self.targets) == 0:
+            raise SystemError(f"TurnNode ({self.name}) at dead end")
+        super().__call__()
+
+
+def check_acyclic(dagenv, fromname, toname):
+    if fromname in dagenv[toname].targets:
+        return False
+    for n2 in dagenv[toname].targets:
+        if not check_acyclic(dagenv, fromname, n2):
+            return False
+    return True
+
+
+def node_builder(name, tp, *args):
     if tp == "loop":
-        return LoopNode(*args)
+        return LoopNode(name, *args)
     elif tp == "move":
-        return MoveNode(*args)
+        return MoveNode(name, *args)
+    elif tp == "turn":
+        return TurnNode(name, *args)
     else:
         raise TypeError(f"invalid node type {tp}")
 
@@ -147,7 +192,8 @@ def node_builder(tp, *args):
 def standard_env() -> Env:
     "An environment with some Scheme standard procedures."
     env = Env()
-    config.TURTLE.moveto(64, 64)
+    config.TURTLE.moveto((64, 64))
+    config.TURTLE.setheading(0)
     env.update(vars(math))  # sin, cos, sqrt, pi, ...
     env.update(
         {
@@ -197,7 +243,8 @@ def evalf(x, env):
         return evalf(exp, env)
     elif op == "define-node":
         name, tp, *tpargs = args
-        env[name] = node_builder(tp, *tpargs, env)
+        node = node_builder(name, tp, *tpargs, env)
+        env[name] = node
     elif op == "out!":
         env.outputs.append(eval(args[0]))
     elif op == "in!":
@@ -207,8 +254,10 @@ def evalf(x, env):
         env[name] = DAG(body, env)
     elif op == "link-node":
         fromnode, tonode = args
-        assert env[fromnode] not in env[tonode].targets, "loop in DAG"
-        env[fromnode].targets.append(env[tonode])
+        assert check_acyclic(
+            env, fromnode, tonode
+        ), f"{fromnode} -> {tonode} causes loop in DAG"
+        env[fromnode].targets.append(tonode)
     elif op == "run-dag":
         dagname, nodename = args
         d = env[dagname]
