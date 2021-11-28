@@ -59,60 +59,50 @@ class DAG(Procedure):
     def __init__(self, body, env):
         super().__init__((), body, env)
 
-    def __call__(self, node):
+    def __call__(self, snode):
         env = Env((), (), self.env)
         for expr in self.body:
             evalf(expr, env)
-        env[node].store()
-        env[node]()
+
+        start = dict(position=(64, 64), heading=0)
+        messages = [(snode, start)]
+
+        while len(messages) > 0:
+            msg = messages.pop(0)
+            node, data = msg
+            if data:
+                print("Processing:", node, data)
+                results = env[node](data)
+                messages = messages + results
 
 
 class Node(Procedure):
-    def __init__(self, name, body, env):
-        super().__init__((), body, env)
+    def __init__(self, name, env):
+        super().__init__((), (), env)
         self.name = name
-        self.input = None
-        self.outputs = []
         self.targets = []
-        self.position = None
-        self.heading = None
 
-    def reset(self):
-        pass
-
-    def store(self):
-        self.position = config.TURTLE.position()
-        self.heading = config.TURTLE.heading()
-
-    def restore(self):
-        config.TURTLE.moveto(self.position)
-        config.TURTLE.setheading(self.heading)
-
-    def forward(self):
-        self.store()
-
-        l0 = len(self.outputs)
-        # l1 = len(self.targets)
+    def forward(self, data):
+        outdata = dict(**data)
+        outdata["position"] = config.TURTLE.position()
+        outdata["heading"] = config.TURTLE.heading()
+        results = []
         for i, nodename in enumerate(self.targets):
-            node = self.env[nodename]
-            node.reset()
-            if i > l0 - 1:
-                node.input = self.input
-            else:
-                node.input = self.outputs[i]
+            results.append((nodename, outdata))
+        return results
 
-            if node.position is None:
-                node.position = self.position
-            if node.heading is None:
-                node.heading = self.heading
+    def valid_message(self, data):
+        if data.get("position", None):
+            config.TURTLE.moveto(data["position"])
+            config.TURTLE.setheading(data["heading"])
+            return True
+        return False
 
-            node()
-            self.restore()
-
-    def __call__(self):
-        answer = evalf(self.body, Env((), (), self.env))
-        self.forward()
-        return answer
+    def __call__(self, data):
+        if self.valid_message(data):
+            results = self.forward(data)
+            return results
+        return []
 
 
 def loop_reset(node):
@@ -123,50 +113,62 @@ def loop_reset(node):
 
 
 class LoopNode(Node):
-    def __init__(self, name, start, end, body, env):
-        super().__init__(name, body, env)
+    def __init__(self, name, start, end, env):
+        super().__init__(name, env)
         self.start = start
         self.end = end
-        self.i = start
+        self.passinfo = dict()
 
     def reset(self):
         self.i = self.start
         loop_reset(self)
 
-    def __call__(self):
-        env = Env(("i"), (self.i,), self.env)
-        while self.i < self.end:
-            for expr in self.body:
-                evalf(expr, env)
-            self.forward()
-            self.i += 1
-        return None
+    def forward(self, data):
+        outdata = dict(**data)
+        outdata["position"] = config.TURTLE.position()
+        outdata["heading"] = config.TURTLE.heading()
+        results = []
+        for i, nodename in enumerate(self.targets):
+            loop_node = not check_acyclic(self.env, self.name, nodename)
+            in_loop = outdata["i"] < self.end
+
+            if not (loop_node ^ in_loop):
+                results.append((nodename, outdata))
+        return results
+
+    def __call__(self, data):
+        if self.valid_message(data):
+            data["i"] = data.get("i", self.start - 1)
+            if data["i"] < self.end:
+                data["i"] = data["i"] + 1
+            return self.forward(data)
+        return []
 
 
 class MoveNode(Node):
-    def __init__(self, name, dist, theta, body, env):
-        super().__init__(name, body, env)
+    def __init__(self, name, dist, theta, env):
+        super().__init__(name, env)
         self.dist = evalf(dist, env)
         self.theta = evalf(theta, env)
 
-    def __call__(self):
-        self.restore()
-        config.TURTLE.left(self.theta)
-        config.TURTLE.forward(self.dist)
-        super().__call__()
+    def __call__(self, data):
+        if self.valid_message(data):
+            config.TURTLE.left(self.theta)
+            config.TURTLE.forward(self.dist)
+            return self.forward(data)
+        return []
 
 
 class TurnNode(Node):
-    def __init__(self, name, theta, body, env):
-        super().__init__(name, body, env)
+    def __init__(self, name, theta, env):
+        super().__init__(name, env)
         self.theta = evalf(theta, env)
 
-    def __call__(self):
-        self.restore()
-        config.TURTLE.left(self.theta)
-        if len(self.targets) == 0:
-            raise SystemError(f"TurnNode ({self.name}) at dead end")
-        super().__call__()
+    def __call__(self, data):
+        if self.valid_message(data):
+            config.TURTLE.left(self.theta)
+            return self.forward(data)
+        return []
 
 
 def check_acyclic(dagenv, fromname, toname):
@@ -254,9 +256,9 @@ def evalf(x, env):
         env[name] = DAG(body, env)
     elif op == "link-node":
         fromnode, tonode = args
-        assert check_acyclic(
-            env, fromnode, tonode
-        ), f"{fromnode} -> {tonode} causes loop in DAG"
+        # assert check_acyclic(
+        #    env, fromnode, tonode
+        # ), f"{fromnode} -> {tonode} causes loop in DAG"
         env[fromnode].targets.append(tonode)
     elif op == "run-dag":
         dagname, nodename = args
