@@ -64,7 +64,7 @@ class DAG(Procedure):
         for expr in self.body:
             evalf(expr, env)
 
-        start = dict(position=(64, 64), heading=0)
+        start = dict(position=(64, 64), theta=0)
         messages = [(snode, start)]
 
         while len(messages) > 0:
@@ -85,7 +85,7 @@ class Node(Procedure):
     def forward(self, data):
         outdata = dict(**data)
         outdata["position"] = config.TURTLE.position()
-        outdata["heading"] = config.TURTLE.heading()
+        outdata["theta"] = config.TURTLE.heading()
         results = []
         for i, nodename in enumerate(self.targets):
             results.append((nodename, outdata))
@@ -94,7 +94,7 @@ class Node(Procedure):
     def valid_message(self, data):
         if data.get("position", None):
             config.TURTLE.moveto(data["position"])
-            config.TURTLE.setheading(data["heading"])
+            config.TURTLE.setheading(data["theta"])
             return True
         return False
 
@@ -113,11 +113,11 @@ def loop_reset(node):
 
 
 class LoopNode(Node):
-    def __init__(self, name, start, end, env):
+    def __init__(self, name, varname, start, end, env):
         super().__init__(name, env)
         self.start = start
         self.end = end
-        self.passinfo = dict()
+        self.varname = varname
 
     def reset(self):
         self.i = self.start
@@ -126,11 +126,11 @@ class LoopNode(Node):
     def forward(self, data):
         outdata = dict(**data)
         outdata["position"] = config.TURTLE.position()
-        outdata["heading"] = config.TURTLE.heading()
+        outdata["theta"] = config.TURTLE.heading()
         results = []
         for i, nodename in enumerate(self.targets):
             loop_node = not check_acyclic(self.env, self.name, nodename)
-            in_loop = outdata["i"] < self.end
+            in_loop = outdata[self.varname] < self.end
 
             if not (loop_node ^ in_loop):
                 results.append((nodename, outdata))
@@ -138,23 +138,26 @@ class LoopNode(Node):
 
     def __call__(self, data):
         if self.valid_message(data):
-            data["i"] = data.get("i", self.start - 1)
-            if data["i"] < self.end:
-                data["i"] = data["i"] + 1
+            data[self.varname] = data.get(self.varname, self.start - 1)
+            if data[self.varname] < self.end:
+                data[self.varname] = data[self.varname] + 1
             return self.forward(data)
         return []
 
 
 class MoveNode(Node):
-    def __init__(self, name, dist, theta, env):
+    def __init__(self, name, dist, penup, env):
         super().__init__(name, env)
         self.dist = evalf(dist, env)
-        self.theta = evalf(theta, env)
+        self.penup = evalf(penup, env)
 
     def __call__(self, data):
         if self.valid_message(data):
-            config.TURTLE.left(self.theta)
+            if self.penup:
+                config.TURTLE.penup()
             config.TURTLE.forward(self.dist)
+            if self.penup:
+                config.TURTLE.pendown()
             return self.forward(data)
         return []
 
