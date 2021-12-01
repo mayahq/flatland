@@ -7,7 +7,7 @@
                (define-node bpost move 25 0)
                
                (link-node starter bpost)
-               (link-node starter b1a)
+               (link-node starter:body b1a)
                (link-node b1a b1b)
                (link-node b1b starter)
                )

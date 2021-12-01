@@ -80,14 +80,14 @@ class Node(Procedure):
     def __init__(self, name, env):
         super().__init__((), (), env)
         self.name = name
-        self.targets = []
+        self.ports = {"in": [], "out": []}
 
     def forward(self, data):
         outdata = dict(**data)
         outdata["position"] = config.TURTLE.position()
         outdata["theta"] = config.TURTLE.heading()
         results = []
-        for i, nodename in enumerate(self.targets):
+        for i, nodename in enumerate(self.ports["out"]):
             results.append((nodename, outdata))
         return results
 
@@ -118,6 +118,7 @@ class LoopNode(Node):
         self.start = start
         self.end = end
         self.varname = varname
+        self.ports["body"] = []
 
     def reset(self):
         self.i = self.start
@@ -128,12 +129,10 @@ class LoopNode(Node):
         outdata["position"] = config.TURTLE.position()
         outdata["theta"] = config.TURTLE.heading()
         results = []
-        for i, nodename in enumerate(self.targets):
-            loop_node = not check_acyclic(self.env, self.name, nodename)
-            in_loop = outdata[self.varname] < self.end
-
-            if not (loop_node ^ in_loop):
-                results.append((nodename, outdata))
+        in_loop = outdata[self.varname] < self.end
+        targets = self.ports["body"] if in_loop else self.ports["out"]
+        for i, nodename in enumerate(targets):
+            results.append((nodename, outdata))
         return results
 
     def __call__(self, data):
@@ -231,6 +230,17 @@ def standard_env() -> Env:
     return env
 
 
+def split_node_port(z, src=True):
+    a = z.split(":")
+    default = "out" if src else "in"
+    if len(a) >= 2:
+        return a[0], a[1]
+    elif len(a) == 1:
+        return a[0], default
+    else:
+        raise ValueError(f"invalid port {z}")
+
+
 def evalf(x, env):
     "Evaluate an expression in an environment."
     if isinstance(x, Symbol):  # variable reference
@@ -258,11 +268,14 @@ def evalf(x, env):
         name, body = args
         env[name] = DAG(body, env)
     elif op == "link-node":
-        fromnode, tonode = args
+        fnp, tnp = args
+        fnode, fport = split_node_port(fnp, src=True)
+        tnode, tport = split_node_port(tnp, src=False)
         # assert check_acyclic(
         #    env, fromnode, tonode
         # ), f"{fromnode} -> {tonode} causes loop in DAG"
-        env[fromnode].targets.append(tonode)
+        env[fnode].ports[fport].append(tnode)
+        env[tnode].ports[tport].append(fnode)
     elif op == "run-dag":
         dagname, nodename = args
         d = env[dagname]
