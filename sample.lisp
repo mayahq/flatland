@@ -12,5 +12,5 @@
                (link-node b1b starter)
                )
               )
-  (run-dag basic starter)
+  (run-dag basic starter 64 54 0)
 )

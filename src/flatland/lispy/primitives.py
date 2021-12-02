@@ -57,37 +57,49 @@ Exp = (Atom, List)
 
 class DAG(Procedure):
     def __init__(self, body, env):
-        super().__init__((), body, env)
+        super().__init__((), body, Env((), (), env))
 
-    def __call__(self, snode):
-        env = Env((), (), self.env)
+    def __call__(self, snode, position, theta):
         for expr in self.body:
-            evalf(expr, env)
+            evalf(expr, self.env)
 
-        start = dict(position=(64, 64), theta=0)
+        start = dict(position=position, theta=theta)
         messages = [(snode, start)]
 
+        print(self)
         while len(messages) > 0:
             msg = messages.pop(0)
             node, data = msg
             if data:
-                print("Processing:", node, data)
-                results = env[node](data)
+                print("Processing:", node, data, end="\r")
+                results = self.env[node](data)
                 messages = messages + results
+        print()
+
+    def to_dict(self):
+        answer = []
+        for k, obj in self.env.items():
+            if isinstance(obj, Node):
+                answer.append(obj.to_dict())
+        return answer
+
+    def __repr__(self):
+        return json.dumps(self.to_dict(), indent=2)
 
 
 class Node(Procedure):
     def __init__(self, name, env):
         super().__init__((), (), env)
         self.name = name
-        self.ports = {"in": [], "out": []}
+        self.sources = []
+        self.targets = {"out": []}
 
     def forward(self, data):
         outdata = dict(**data)
         outdata["position"] = config.TURTLE.position()
         outdata["theta"] = config.TURTLE.heading()
         results = []
-        for i, nodename in enumerate(self.ports["out"]):
+        for i, nodename in enumerate(self.targets["out"]):
             results.append((nodename, outdata))
         return results
 
@@ -104,6 +116,17 @@ class Node(Procedure):
             return results
         return []
 
+    def to_dict(self):
+        return {
+            "name": self.name,
+            "type": type(self).__name__,
+            "sources": self.sources,
+            "targets": self.targets,
+        }
+
+    def __repr__(self):
+        return json.dumps(self.to_dict(), indent=2)
+
 
 def loop_reset(node):
     node.position = None
@@ -118,7 +141,7 @@ class LoopNode(Node):
         self.start = start
         self.end = end
         self.varname = varname
-        self.ports["body"] = []
+        self.targets["body"] = []
 
     def reset(self):
         self.i = self.start
@@ -130,7 +153,7 @@ class LoopNode(Node):
         outdata["theta"] = config.TURTLE.heading()
         results = []
         in_loop = outdata[self.varname] < self.end
-        targets = self.ports["body"] if in_loop else self.ports["out"]
+        targets = self.targets["body"] if in_loop else self.targets["out"]
         for i, nodename in enumerate(targets):
             results.append((nodename, outdata))
         return results
@@ -196,8 +219,6 @@ def node_builder(name, tp, *args):
 def standard_env() -> Env:
     "An environment with some Scheme standard procedures."
     env = Env()
-    config.TURTLE.moveto((64, 64))
-    config.TURTLE.setheading(0)
     env.update(vars(math))  # sin, cos, sqrt, pi, ...
     env.update(
         {
@@ -274,13 +295,13 @@ def evalf(x, env):
         # assert check_acyclic(
         #    env, fromnode, tonode
         # ), f"{fromnode} -> {tonode} causes loop in DAG"
-        env[fnode].ports[fport].append(tnode)
-        env[tnode].ports[tport].append(fnode)
+        env[fnode].targets[fport].append(tnode)
+        env[tnode].sources.append(fnode)
     elif op == "run-dag":
-        dagname, nodename = args
+        dagname, nodename, x, y, theta = args
         d = env[dagname]
         assert isinstance(d, DAG)
-        d(nodename)
+        d(nodename, (x, y), theta)
     elif op == "define":  # definition
         (symbol, exp) = args
         env[symbol] = evalf(exp, env)

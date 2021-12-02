@@ -6,7 +6,7 @@
                (define-node w1b turn 72)
 
                (define-node starter loop j 0 360)
-               (define-node b1a move (* 10 (sin (/ pi 180))) 1)
+               (define-node b1a move (* 10 (sin (/ pi 180))) 0)
                (define-node b1b turn 1)
                (define-node bpost1 turn 54)
                (define-node bpost2 move 25 0)
@@ -23,5 +23,5 @@
                (link-node bpost1 bpost2)
                )
               )
-  (run-dag basic plswork)
+  (run-dag basic plswork 49 39 0)
 )
