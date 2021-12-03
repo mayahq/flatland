@@ -62,8 +62,7 @@ class Node(Procedure):
         self.sources = []
         self.targets = {"out": []}
 
-    def forward(self, data):
-        outdata = dict(**data)
+    def forward(self, outdata):
         outdata["position"] = config.TURTLE.position()
         outdata["theta"] = config.TURTLE.heading()
         results = []
@@ -78,8 +77,9 @@ class Node(Procedure):
             return True
         return False
 
-    def __call__(self, data):
-        if self.valid_message(data):
+    def __call__(self, data0):
+        if self.valid_message(data0):
+            data = dict(**data0)
             results = self.forward(data)
             return results
         return []
@@ -115,8 +115,7 @@ class LoopNode(Node):
         self.i = self.start
         loop_reset(self)
 
-    def forward(self, data):
-        outdata = dict(**data)
+    def forward(self, outdata):
         outdata["position"] = config.TURTLE.position()
         outdata["theta"] = config.TURTLE.heading()
         results = []
@@ -128,8 +127,9 @@ class LoopNode(Node):
             results.append((self.name, nodename, outdata))
         return results
 
-    def __call__(self, data):
-        if self.valid_message(data):
+    def __call__(self, data0):
+        if self.valid_message(data0):
+            data = dict(**data0)
             data[self.varname] = data.get(self.varname, self.start - 1)
             if data[self.varname] < self.end:
                 data[self.varname] = data[self.varname] + 1
