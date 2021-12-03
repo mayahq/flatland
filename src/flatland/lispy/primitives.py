@@ -136,12 +136,18 @@ class LoopNode(Node):
             return self.forward(data)
         return []
 
+    def to_dict(self):
+        a = super().to_dict()
+        a["start"] = self.start
+        a["end"] = self.end
+        a["varname"] = self.varname
+        return a
+
 
 class MoveNode(Node):
     def __init__(self, name, dist, penup, env):
         super().__init__(name, env)
         self.dist = evalf(dist, env)
-        print(self.dist)
         self.penup = evalf(penup, env)
 
     def __call__(self, data):
@@ -211,7 +217,10 @@ class Flow(Node):  # brain hurty
             if tnode == "__internal__":
                 self.internal(data, fnode)
             elif data:
-                # print("Processing:", tnode, data, end="\r")
+                if self.name == "_":
+                    print("Processing:", msg)
+                    print("yet to process:", messages)
+                    print()
                 results = self.env[tnode](data)
                 messages.extend(results)
         return self.forward(None)
@@ -222,6 +231,7 @@ class Flow(Node):  # brain hurty
             for nodename in self.targets[k]:
                 for xdata in self.internal.messages[k]:
                     results.append((self.name, nodename, dict(**xdata)))
+            self.internal.messages[k].clear()
         return results
 
     def to_dict(self):
