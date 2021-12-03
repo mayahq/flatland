@@ -55,38 +55,6 @@ Atom = (Symbol, Number)
 Exp = (Atom, List)
 
 
-class DAG(Procedure):
-    def __init__(self, body, env):
-        super().__init__((), body, Env((), (), env))
-
-    def __call__(self, snode, position, theta):
-        for expr in self.body:
-            evalf(expr, self.env)
-
-        start = dict(position=position, theta=theta)
-        messages = [(snode, start)]
-
-        print(self)
-        while len(messages) > 0:
-            msg = messages.pop(0)
-            node, data = msg
-            if data:
-                print("Processing:", node, data, end="\r")
-                results = self.env[node](data)
-                messages = messages + results
-        print()
-
-    def to_dict(self):
-        answer = []
-        for k, obj in self.env.items():
-            if isinstance(obj, Node):
-                answer.append(obj.to_dict())
-        return answer
-
-    def __repr__(self):
-        return json.dumps(self.to_dict(), indent=2)
-
-
 class Node(Procedure):
     def __init__(self, name, env):
         super().__init__((), (), env)
@@ -100,7 +68,7 @@ class Node(Procedure):
         outdata["theta"] = config.TURTLE.heading()
         results = []
         for i, nodename in enumerate(self.targets["out"]):
-            results.append((nodename, outdata))
+            results.append((self.name, nodename, outdata))
         return results
 
     def valid_message(self, data):
@@ -154,8 +122,10 @@ class LoopNode(Node):
         results = []
         in_loop = outdata[self.varname] < self.end
         targets = self.targets["body"] if in_loop else self.targets["out"]
+        if not in_loop:
+            outdata.pop(self.varname)
         for i, nodename in enumerate(targets):
-            results.append((nodename, outdata))
+            results.append((self.name, nodename, outdata))
         return results
 
     def __call__(self, data):
@@ -171,6 +141,7 @@ class MoveNode(Node):
     def __init__(self, name, dist, penup, env):
         super().__init__(name, env)
         self.dist = evalf(dist, env)
+        print(self.dist)
         self.penup = evalf(penup, env)
 
     def __call__(self, data):
@@ -196,24 +167,157 @@ class TurnNode(Node):
         return []
 
 
-def check_acyclic(dagenv, fromname, toname):
-    if fromname in dagenv[toname].targets:
+class Flow(Node):  # brain hurty
+    class Internal:
+        def __init__(self):
+            self.entries = set()
+            self.exits = dict()
+            self.messages = dict()
+
+        def add_entry(self, node):
+            self.entries.add(node)
+
+        def add_exit(self, node, port):
+            if port not in self.exits:
+                self.exits[port] = []
+                self.messages[port] = []
+            self.exits[port].append(node)
+
+        def add_message(self, data, node):
+            for port, names in self.exits.items():
+                if node in names:
+                    self.messages[port].append(data)
+
+        def __call__(self, data, node):
+            self.add_message(data, node)
+            return []
+
+    def __init__(self, name, tp, params, opts, body, env):
+        super().__init__(name, Env(params, opts, env))
+        self.tp = tp
+        self.body = body
+        self.internal = Flow.Internal()
+        self.env["__internal__"] = self.internal
+
+    def install(self):
+        for expr in self.body:
+            evalf(expr, self.env)
+
+    def __call__(self, data):
+        messages = [("__internal__", snode, data) for snode in self.internal.entries]
+        while len(messages) > 0:
+            msg = messages.pop(0)
+            fnode, tnode, data = msg
+            if tnode == "__internal__":
+                self.internal(data, fnode)
+            elif data:
+                # print("Processing:", tnode, data, end="\r")
+                results = self.env[tnode](data)
+                messages.extend(results)
+        return self.forward(None)
+
+    def forward(self, data):
+        results = []
+        for k in self.targets:
+            for nodename in self.targets[k]:
+                for xdata in self.internal.messages[k]:
+                    results.append((self.name, nodename, dict(**xdata)))
+        return results
+
+    def to_dict(self):
+        answer = dict(name=self.name, tp=self.tp, nodes=[])
+        for k, obj in self.env.items():
+            if isinstance(obj, Node):
+                answer["nodes"].append(obj.to_dict())
+        return answer
+
+    def __repr__(self):
+        return json.dumps(self.to_dict(), indent=2)
+
+
+class FlowCreator:
+    def __init__(self, tp, params, body):
+        self.tp = tp
+        self.params = params
+        self.body = body
+
+    def __call__(self, name, opts, env):
+        flow = Flow(name, self.tp, self.params, opts, self.body, env)
+        flow.install()
+        return flow
+
+
+def check_acyclic(flowenv, fromname, toname):
+    if fromname in flowenv[toname].targets:
         return False
-    for n2 in dagenv[toname].targets:
-        if not check_acyclic(dagenv, fromname, n2):
+    for n2 in flowenv[toname].targets:
+        if not check_acyclic(flowenv, fromname, n2):
             return False
     return True
 
 
-def node_builder(name, tp, *args):
+def node_creator(env, name, tp, *args):
+    if env.get("name"):
+        raise ValueError(f"node name {name} already exists")
     if tp == "loop":
-        return LoopNode(name, *args)
+        return LoopNode(name, *args, env)
     elif tp == "move":
-        return MoveNode(name, *args)
+        return MoveNode(name, *args, env)
     elif tp == "turn":
-        return TurnNode(name, *args)
+        return TurnNode(name, *args, env)
+    elif isinstance(env.find(tp)[tp], FlowCreator):
+        fc = env.find(tp)[tp]
+        return fc(name, args, env)
     else:
         raise TypeError(f"invalid node type {tp}")
+
+
+def split_node_port(z, src=True):
+    a = z.split(":")
+    default = "out" if src else "in"
+    if len(a) >= 2:
+        return a[0], a[1]
+    elif len(a) == 1:
+        return a[0], default
+    else:
+        raise ValueError(f"invalid port {z}")
+
+
+def link_creator(env, fnp, tnp):
+    fnode, fport = split_node_port(fnp, src=True)
+    tnode, tport = split_node_port(tnp, src=False)
+    # print((fnode, fport), (tnode, tport))
+    # print(env)
+    # assert check_acyclic(
+    #    env, fromnode, tonode
+    # ), f"{fromnode} -> {tonode} causes loop in Flow"
+    env[fnode].targets[fport].append(tnode)
+    env[tnode].sources.append(fnode)
+
+
+def create_exit(env, np, ports):
+    if ports:
+        port = ports[0]
+    else:
+        port = "out"
+    node, nport = split_node_port(np)
+    env["__internal__"].add_exit(node, port)
+    env[node].targets[port].append("__internal__")
+
+
+def run_flow(env, flowname, rest):
+    d = env[flowname]
+    if isinstance(d, FlowCreator):
+        opts, pos, theta = rest
+        flow = d("_", opts, env)
+    elif isinstance(d, Flow):
+        flow = d
+    else:
+        raise TypeError(f"cannot create flow from {flowname}")
+    data = dict(position=pos, theta=theta)
+    print(flow)
+    a = flow(data)
+    print("flow output", a)
 
 
 def standard_env() -> Env:
@@ -251,17 +355,6 @@ def standard_env() -> Env:
     return env
 
 
-def split_node_port(z, src=True):
-    a = z.split(":")
-    default = "out" if src else "in"
-    if len(a) >= 2:
-        return a[0], a[1]
-    elif len(a) == 1:
-        return a[0], default
-    else:
-        raise ValueError(f"invalid port {z}")
-
-
 def evalf(x, env):
     "Evaluate an expression in an environment."
     if isinstance(x, Symbol):  # variable reference
@@ -277,31 +370,29 @@ def evalf(x, env):
         (test, conseq, alt) = args
         exp = conseq if evalf(test, env) else alt
         return evalf(exp, env)
-    elif op == "define-node":
+    elif op == "create-node":
         name, tp, *tpargs = args
-        node = node_builder(name, tp, *tpargs, env)
+        node = node_creator(env, name, tp, *tpargs)
         env[name] = node
     elif op == "out!":
         env.outputs.append(eval(args[0]))
     elif op == "in!":
         return evalf(env.input, env)
-    elif op == "define-dag":
-        name, body = args
-        env[name] = DAG(body, env)
-    elif op == "link-node":
+    elif op == "define-flow":
+        tp, params, body = args
+        env[tp] = FlowCreator(tp, params, body)
+    elif op == "create-entry":
+        node = args[0]
+        env["__internal__"].add_entry(node)
+    elif op == "create-exit":
+        np, *ports = args
+        create_exit(env, np, ports)
+    elif op == "create-link":
         fnp, tnp = args
-        fnode, fport = split_node_port(fnp, src=True)
-        tnode, tport = split_node_port(tnp, src=False)
-        # assert check_acyclic(
-        #    env, fromnode, tonode
-        # ), f"{fromnode} -> {tonode} causes loop in DAG"
-        env[fnode].targets[fport].append(tnode)
-        env[tnode].sources.append(fnode)
-    elif op == "run-dag":
-        dagname, nodename, x, y, theta = args
-        d = env[dagname]
-        assert isinstance(d, DAG)
-        d(nodename, (x, y), theta)
+        link_creator(env, fnp, tnp)
+    elif op == "run-flow":
+        flowname, *rest = args
+        run_flow(env, flowname, rest)
     elif op == "define":  # definition
         (symbol, exp) = args
         env[symbol] = evalf(exp, env)

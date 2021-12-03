@@ -1,16 +1,20 @@
 (begin
-  (define-dag basic
+  (define-flow basic (pmove)
               (
-               (define-node starter loop qq 0 360) 
-               (define-node b1a move (* 10 (sin (/ pi 180))) 0)
-               (define-node b1b turn 1)
-               (define-node bpost move 25 0)
+               (create-node starter loop qq 0 360) 
+               (create-node b1a move (* 10 (sin (/ pi 180))) 0)
+               (create-node b1b turn 1)
+               (create-node bpost move pmove 0)
                
-               (link-node starter bpost)
-               (link-node starter:body b1a)
-               (link-node b1a b1b)
-               (link-node b1b starter)
+               (create-entry starter)
+               
+               (create-link starter bpost)
+               (create-link starter:body b1a)
+               (create-link b1a b1b)
+               (create-link b1b starter)
+
+               (create-exit starter)
                )
               )
-  (run-dag basic starter 64 54 0)
+  (run-flow basic (20) (64 54) 0)
 )
