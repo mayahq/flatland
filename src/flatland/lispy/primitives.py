@@ -4,10 +4,19 @@
 import json
 import math
 import operator as op
+import random
+import time
 
 import flatland.utils.config as config
 from flatland.utils.modding import finalize
 from flatland.utils.modding import initialize
+
+
+def GENERATE_NODEID():
+    return "{:10x}.fed{:05x}".format(
+        random.randrange(16 ** 10),
+        random.randrange(16 ** 5),
+    )
 
 
 class Symbol(str):
@@ -35,6 +44,7 @@ class Env(dict):
     def __init__(self, parms=(), args=(), outer=None):
         self.update(zip(parms, args))
         self.outer = outer
+        self.name = GENERATE_NODEID()
 
     def find(self, var):
         "Find the innermost Env where var appears."
@@ -57,7 +67,7 @@ Exp = (Atom, List)
 
 class Node(Procedure):
     def __init__(self, name, env):
-        super().__init__((), (), env)
+        super().__init__((), (), Env((), (), env))
         self.name = name
         self.sources = []
         self.targets = {"out": []}
@@ -87,7 +97,9 @@ class Node(Procedure):
     def to_dict(self):
         return {
             "name": self.name,
+            "id": self.env.name,
             "type": type(self).__name__,
+            "scope": self.env.outer.name,
             "sources": self.sources,
             "targets": self.targets,
         }
@@ -106,8 +118,8 @@ def loop_reset(node):
 class LoopNode(Node):
     def __init__(self, name, varname, start, end, env):
         super().__init__(name, env)
-        self.start = start
-        self.end = end
+        self.start = evalf(start, self.env)
+        self.end = evalf(end, self.env)
         self.varname = varname
         self.targets["body"] = []
 
@@ -147,8 +159,8 @@ class LoopNode(Node):
 class MoveNode(Node):
     def __init__(self, name, dist, penup, env):
         super().__init__(name, env)
-        self.dist = evalf(dist, env)
-        self.penup = evalf(penup, env)
+        self.dist = evalf(dist, self.env)
+        self.penup = evalf(penup, self.env)
 
     def __call__(self, data):
         if self.valid_message(data):
@@ -159,6 +171,12 @@ class MoveNode(Node):
                 config.TURTLE.pendown()
             return self.forward(data)
         return []
+
+    def to_dict(self):
+        a = super().to_dict()
+        a["dist"] = self.dist
+        a["penup"] = self.penup
+        return a
 
 
 class TurnNode(Node):
@@ -171,6 +189,11 @@ class TurnNode(Node):
             config.TURTLE.left(self.theta)
             return self.forward(data)
         return []
+
+    def to_dict(self):
+        a = super().to_dict()
+        a["theta"] = self.theta
+        return a
 
 
 class Flow(Node):  # brain hurty
@@ -199,7 +222,9 @@ class Flow(Node):  # brain hurty
             return []
 
     def __init__(self, name, tp, params, opts, body, env):
-        super().__init__(name, Env(params, opts, env))
+        optvals = [evalf(x, env) for x in opts]
+        super().__init__(name, env)
+        self.env = Env(params, optvals, env)
         self.tp = tp
         self.body = body
         self.internal = Flow.Internal()
@@ -235,11 +260,17 @@ class Flow(Node):  # brain hurty
         return results
 
     def to_dict(self):
-        answer = dict(name=self.name, tp=self.tp, nodes=[])
+        nodes = [super().to_dict()]
         for k, obj in self.env.items():
             if isinstance(obj, Node):
-                answer["nodes"].append(obj.to_dict())
-        return answer
+                info = obj.to_dict()
+                if isinstance(info, list):
+                    nodes.extend(info)
+                elif isinstance(info, dict):
+                    nodes.append(info)
+                else:
+                    raise TypeError("invalid nodeinfo type: " + str(type(info)))
+        return nodes
 
     def __repr__(self):
         return json.dumps(self.to_dict(), indent=2)
@@ -325,14 +356,18 @@ def run_flow(env, flowname, rest):
     else:
         raise TypeError(f"cannot create flow from {flowname}")
     data = dict(position=pos, theta=theta)
-    print(flow)
-    a = flow(data)
-    print("flow output", a)
+    # print(flow)
+    flow(data)
+    # print("flow output", a)
+    print("DONE.")
 
 
 def standard_env() -> Env:
     "An environment with some Scheme standard procedures."
     env = Env()
+    env.name = "__global__"
+    seed = int(time.mktime(time.gmtime())) % 10000
+    random.seed(seed)
     env.update(vars(math))  # sin, cos, sqrt, pi, ...
     env.update(
         {
@@ -360,6 +395,7 @@ def standard_env() -> Env:
             "procedure?": callable,
             "round": round,
             "symbol?": lambda x: isinstance(x, Symbol),
+            "randint": random.randint,
         }
     )
     return env
