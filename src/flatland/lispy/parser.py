@@ -56,7 +56,6 @@ def runner(program: str, filename: str):
     initialize()
     global_env = standard_env()
     pgm = parse(program)
-    # print(pgm)
     evalf(pgm, global_env)
     finalize(filename)
 

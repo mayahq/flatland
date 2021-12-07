@@ -2,13 +2,15 @@
   (define-flow circle (radius)
                (
                 (create-node starter loop j 0 360)
-                (create-node b1a move (* radius (sin (/ pi 180))) 0)
-                (create-node b1b turn 1)
-
                 (create-entry starter)
+                
+                (create-node b1a move (* radius (sin (/ pi 180))) 0)
                 (create-link starter:body b1a)
+
+                (create-node b1b turn 1)
                 (create-link b1a b1b)
                 (create-link b1b starter)
+                
                 (create-exit starter:out out)
                 )
                )

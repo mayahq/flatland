@@ -356,7 +356,7 @@ def run_flow(env, flowname, rest):
     else:
         raise TypeError(f"cannot create flow from {flowname}")
     data = dict(position=pos, theta=theta)
-    # print(flow)
+    print(flow)
     flow(data)
     # print("flow output", a)
     print("DONE.")
