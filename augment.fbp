@@ -1,0 +1,14 @@
+
+@param {theta} Int(choice[0, 45, 90, 135, 180])
+limbs(start length) -> loop1(loop i 0 4)
+loop1 body -> move1(move length 0)
+move1 -> turn2(turn 90)
+turn2 -> loop1
+loop1 -> limbs(end)
+
+main(start nval) -> turn1(turn nval)
+turn1 -> dag(limbs nval)
+dag -> move8(move 5 0)
+move8 -> main(end)
+
+{"position":[40,32]} -> main(25)
