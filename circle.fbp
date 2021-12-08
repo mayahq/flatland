@@ -1,5 +1,5 @@
 circle(start radius) -> loop1(loop i 0 360)
-loop1 body -> move1(move (* 10 (sin (/ pi 180))) 0)
+loop1 body -> move1(move (* radius (sin (/ pi 180))) 0)
 move1 -> turn1(turn 1)
 turn1 -> loop1
 loop1 -> circle(end)

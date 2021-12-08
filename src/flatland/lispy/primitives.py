@@ -121,6 +121,7 @@ class LoopNode(Node):
         self.start = evalf(start, self.env)
         self.end = evalf(end, self.env)
         self.varname = varname
+        self.resolved_name = f"{self.env.name}:{self.varname}"
         self.targets["body"] = []
 
     def reset(self):
@@ -131,10 +132,10 @@ class LoopNode(Node):
         outdata["position"] = config.TURTLE.position()
         outdata["theta"] = config.TURTLE.heading()
         results = []
-        in_loop = outdata[self.varname] < self.end
+        in_loop = outdata[self.resolved_name] < self.end
         targets = self.targets["body"] if in_loop else self.targets["out"]
         if not in_loop:
-            outdata.pop(self.varname)
+            outdata.pop(self.resolved_name)
         for i, nodename in enumerate(targets):
             results.append((self.name, nodename, outdata))
         return results
@@ -142,9 +143,9 @@ class LoopNode(Node):
     def __call__(self, data0):
         if self.valid_message(data0):
             data = dict(**data0)
-            data[self.varname] = data.get(self.varname, self.start - 1)
-            if data[self.varname] < self.end:
-                data[self.varname] = data[self.varname] + 1
+            data[self.resolved_name] = data.get(self.resolved_name, self.start - 1)
+            if data[self.resolved_name] < self.end:
+                data[self.resolved_name] = data[self.resolved_name] + 1
             return self.forward(data)
         return []
 
@@ -228,6 +229,7 @@ class Flow(Node):  # brain hurty
         self.tp = tp
         self.body = body
         self.internal = Flow.Internal()
+        self.params = params
         self.env["__internal__"] = self.internal
 
     def install(self):
@@ -260,7 +262,10 @@ class Flow(Node):  # brain hurty
         return results
 
     def to_dict(self):
-        nodes = [super().to_dict()]
+        a = super().to_dict()
+        for x in self.params:
+            a[x] = self.env[x]
+        nodes = [a]
         for k, obj in self.env.items():
             if isinstance(obj, Node):
                 info = obj.to_dict()

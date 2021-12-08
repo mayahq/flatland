@@ -131,7 +131,7 @@ def parse0(lines):
     edges = []
     imports = []
     for line in lines:
-        if len(line) == 0:
+        if len(line) == 0 or "@param" in line:
             continue
         if "import" in line:
             a = line.replace("import ", "").replace("from ", "")

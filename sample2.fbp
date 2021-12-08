@@ -1,0 +1,17 @@
+circle(start radius) -> loop1(loop i 0 360)
+loop1 body -> move1(move (* radius (sin (/ pi 180))) 0)
+move1 -> turn1(turn 1)
+turn1 -> loop1
+loop1 -> circle(end)
+
+limbs(start radius) -> loop1(loop i 0 4)
+loop1 body -> circle1(circle radius)
+circle1 -> turn2(turn 90)
+turn2 -> loop1
+loop1 -> limbs(end)
+
+main(start nval) -> dag(limbs nval)
+dag -> move8(move 5 0)
+move8 -> main(end)
+
+{"position":[32,32]} -> main(30)
