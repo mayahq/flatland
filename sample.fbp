@@ -1,0 +1,14 @@
+import circle from "./circle.fbp"
+
+limbs(start radius) -> loop1(loop i 0 4)
+loop1 body -> move1(move radius 0)
+move1 -> turn2(turn 90)
+turn2 -> loop1
+loop1 -> limbs(end)
+
+main(start nval) -> dag(limbs nval)
+dag -> dag2(circle 90)
+dag2 -> move8(move 5 0)
+move8 -> main(end)
+
+{"position":[32,32]} -> main(30)

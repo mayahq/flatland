@@ -1,4 +1,6 @@
 import json
+import os
+import turtle
 from io import BytesIO
 from tkinter import Canvas
 from tkinter import Tk
@@ -10,7 +12,7 @@ from PIL import Image
 import flatland.utils.config as config
 
 
-class Screen(BaseScreen):
+class MyScreen(BaseScreen):
     def __init__(self, canvas):
         super().__init__(canvas)
         self.tracer(1, 0)
@@ -51,7 +53,7 @@ class Screen(BaseScreen):
         self.update()
 
 
-class Turtle(BaseTurtle):
+class MyTurtle(BaseTurtle):
     def __init__(self, screen):
         super().__init__(screen)
         self.speed(0)
@@ -72,7 +74,7 @@ class Turtle(BaseTurtle):
         self.pendown()
 
     def clear(self):
-        super().clear()
+        BaseTurtle.clear(self)
         self.assembly = []
         self.cur_id = 0
 
@@ -86,36 +88,52 @@ class Turtle(BaseTurtle):
 def initialize():
     if not config.inited:
         config.inited = True
-        config.ROOT = Tk()
-        config.ROOT.overrideredirect(1)
-        config.ROOT.withdraw()
+        if os.getenv("SHOWTURTLE", 0):
+            config.TURTLE = turtle.Turtle()
+            config.TURTLE.moveto = lambda *args: MyTurtle.moveto(config.TURTLE, *args)
+            config.TURTLE.moveby = lambda *args: MyTurtle.moveby(config.TURTLE, *args)
+            config.TURTLE.updatelog = lambda *args: MyTurtle.updatelog(
+                config.TURTLE, *args
+            )
+            config.TURTLE.clear = lambda *args: MyTurtle.clear(config.TURTLE, *args)
+            config.SCREEN = config.TURTLE.getscreen()
+            config.SCREEN.tracer(1, 0)
+            config.SCREEN.setworldcoordinates(0, 0, 128, 128)
+            config.CANVAS = config.SCREEN.getcanvas()
+        else:
+            config.ROOT = Tk()
+            config.ROOT.overrideredirect(1)
+            config.ROOT.withdraw()
 
-        config.CANVAS = Canvas(master=config.ROOT, width=256, height=256)
-        config.CANVAS.configure(scrollregion=(0, 0, 256, 256))
-        BaseScreen._canvas = config.CANVAS
-        BaseScreen._root = config.ROOT
-        config.SCREEN = Screen(config.CANVAS)
-        config.SCREEN.setworldcoordinates(0, 0, 128, 128)
-        config.TURTLE = Turtle(config.SCREEN)
+            config.CANVAS = Canvas(master=config.ROOT, width=256, height=256)
+            config.CANVAS.configure(scrollregion=(0, 0, 256, 256))
+            BaseScreen._canvas = config.CANVAS
+            BaseScreen._root = config.ROOT
+            config.SCREEN = MyScreen(config.CANVAS)
+            config.SCREEN.setworldcoordinates(0, 0, 128, 128)
+            config.TURTLE = MyTurtle(config.SCREEN)
 
-        assert config.TURTLE.getscreen() == config.SCREEN
-        assert config.SCREEN.getcanvas() == config.CANVAS
+            assert config.TURTLE.getscreen() == config.SCREEN
+            assert config.SCREEN.getcanvas() == config.CANVAS
 
 
 def finalize(fname):
+    if os.getenv("SHOWTURTLE", 0):
+        input("Press Enter to exit")
     turtle = config.TURTLE
     rawname = fname.split(".")[0]
     h, w = 256, 256
-    ps = config.CANVAS.postscript(
-        colormode="color",
-        height=h,
-        width=w,
-        y=-h,
+    ps = (
+        turtle.getscreen()
+        .getcanvas()
+        .postscript(
+            colormode="color",
+            height=h,
+            width=w,
+            y=-h,
+        )
     )
     out = BytesIO(ps.encode("utf-8"))
     img = Image.open(out).convert("RGBA").resize((256, 256))
     img.save(f"{rawname}.png", lossless=True)
-    with open(f"{rawname}.json", "w") as f:
-        json.dump(turtle.assembly, f, indent=4)
-
     turtle.clear()
