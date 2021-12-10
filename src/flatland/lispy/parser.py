@@ -154,6 +154,7 @@ def runner(program: str, filename: str):
     setdir(filename)
     global_env = standard_env()
     edges = parse0(program.split("\n"))
+    print("edges", edges)
     pgm = parse_edges(edges)
     evalf(pgm, global_env)
     finalize(filename)
