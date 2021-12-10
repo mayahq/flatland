@@ -1,8 +1,10 @@
 # Flatland
 
-Flatland is an environment for program synthesis experiments. The goal for intelligence systems is to write programs controlling a ‘pen’ to draw the target image.
+Flatland is an environment for program synthesis experiments. The goal is to train models which can write programs controlling a ‘pen’ to draw any arbitrary target image. Hence, methods to learn and generate programs in this flow-based "link" language in Flatland may surface insights to tackle more complex real-world tasks as described in the paper "Towards a Measure of General Machine Intelligence" on [arxiv:2109.12075][paper].
 
-Flatland's flow-based programs (FBP) are defined as networks of reusable components running "black-box" processes, which communicate via data chunks (called information packets) travelling across predefined connections (think "conveyor belts"). FBP is simply the coordination logic to compose different reusable components together. Hence, methods to learn and generate programs in this flow-based "link" language in Flatland may surface insights to tackle more complex real-world tasks as described in the paper "Towards a Measure of General Machine Intelligence" on [arxiv:2109.12075][paper].
+### Syntax
+
+Flatland's flow-based programs (FBP) are defined as networks of reusable components running "black-box" processes, which communicate via data chunks (called information packets) travelling across predefined connections (think "conveyor belts"). LISP-style primitives can be used inside Flatland for more complex control.
 
 ## Installation
 
