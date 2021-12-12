@@ -174,7 +174,7 @@ def runner(program: str, filename: str, env=None, run=True):
         if env is None:
             env = standard_env()
         env.includes.add(filename)
-        print(f"evaluating {filename}")
+        # print(f"evaluating {filename}")
         fdata = evalf(pgm, env, run)
         if run:  # drawing happened
             finalize(filename)

@@ -7,6 +7,8 @@ import sys
 import numpy as np
 import pandas as pd
 
+from flatland.lispy.parser import runner as parse_and_run_flow
+from flatland.lispy.primitives import resolve_scope
 from flatland.metrics import program_distance
 from flatland.metrics.distances import FUNCTION_MAP
 from flatland.metrics.distances import LENIENCY
@@ -14,9 +16,11 @@ from flatland.metrics.distances import LENIENCY
 
 def check_folder(folder):
     if os.path.exists(folder) and os.path.isdir(folder):
-        files = glob.glob(os.path.join(folder, "*.json"))
+        files = glob.glob(os.path.join(folder, "*.fbp")) + glob.glob(
+            os.path.join(folder, "*.lisp")
+        )
         if len(files) == 0:
-            raise ValueError(f"{folder} contains no JSON files")
+            raise ValueError(f"{folder} contains no files")
         return files
     raise ValueError(f"{folder} is invalid")
 
@@ -27,6 +31,12 @@ def check_csv(fname):
     raise ValueError(f"{fname} is not a .csv")
 
 
+def get_data(filename):
+    with open(filename) as f:
+        fdata = parse_and_run_flow(f.read(), filename, env=None, run=False)
+    return fdata
+
+
 def run(train_set, test_set, output_fname, metric_name):
     # print(train_set, test_set)
     final_scores = np.zeros((len(test_set), 1), np.float32)
@@ -34,12 +44,14 @@ def run(train_set, test_set, output_fname, metric_name):
     total = len(train_set) * len(test_set)
     count = 0
     for i, t_dash in enumerate(test_set):
-        p_dash = json.load(open(t_dash))
         for j, t in enumerate(train_set):
             count += 1
-            print(f"{count}/{total}: scoring {t_dash} and {t}", end="\r")
-            p = json.load(open(t))
+            print(f"{count}/{total}: scoring {t_dash} and {t} =>", end=" ")
+            # SLOW, move p_dash outside the loop pls
+            p_dash = get_data(t_dash)
+            p = get_data(t)
             scores[j] = program_distance(p_dash, p, metric_name)
+            print(scores[j])
         final_scores[i] = np.min(scores)
     DD = np.mean(final_scores)
     score_df = pd.DataFrame(
@@ -75,14 +87,9 @@ def main():
         default="results.csv",
         help="output score matrix to a CSV",
     )
-    parser.add_argument(
-        "-d", "--metric", default="recursive", help="distance metric to use"
-    )
 
     d = parser.parse_args()
-    if d.output == "results.csv":
-        d.output = f"results_{d.metric}{LENIENCY}.csv"
-    run(d.train_set, d.test_set, d.output, d.metric)
+    run(d.train_set, d.test_set, d.output, "recursive")
 
 
 if __name__ == "__main__":

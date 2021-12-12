@@ -390,7 +390,9 @@ def run_flow(run, env, flowname, rest):
     data["scope"] = "__global__"
     data["name"] = "START"
     fdata = flow.to_dict()
-    fdata[0]["sources"].append(data["id"])
+    for x in fdata:
+        if x["name"] == "_":
+            x["sources"].append(data["id"])
     fdata.insert(0, data)
     return fdata
 
