@@ -47,7 +47,7 @@ def tokenize(chars: str) -> list:
     return chars.replace("(", " ( ").replace(")", " ) ").split()
 
 
-def parse(program: str) -> Exp:
+def parse_lisp(program: str) -> Exp:
     tokenl = tokenize(program)
     expr = read_from_tokens(tokenl)
     return expr
@@ -100,12 +100,6 @@ def rewrite_edge(edge):
     return "".join(answer)
 
 
-def parse_edges(edges):
-    expr = "(begin\n" + "".join(rewrite_edge(x) for x in edges) + ")"
-    print(expr)
-    return parse(expr)
-
-
 def import_flow_from_file(flowname, filename):
     print(flowname, filename)
     with open(filename.strip('"')) as f:
@@ -120,10 +114,10 @@ def import_flow_from_file(flowname, filename):
             end = i + 1
             break
     edges = edges[start:end]
-    return parse0(edges)
+    return parse_fbp(edges)
 
 
-def parse0(lines):
+def parse_fbp(lines):
     def edge_cleaner(s):
         fnode, tnode = s.split("->")
         return fnode.strip(), tnode.strip()
@@ -133,14 +127,16 @@ def parse0(lines):
     for line in lines:
         if len(line) == 0 or "@param" in line:
             continue
-        if "import" in line:
-            a = line.replace("import ", "").replace("from ", "")
-            flowname, filename = a.split()
-            imports.extend(import_flow_from_file(flowname, filename))
+        if "#include" in line:
+            imports.append(f"({line})")
         else:
             edges.append(edge_cleaner(line))
-    edges = imports + edges
-    return edges
+    # print("edges", edges)
+    expr = (
+        "(begin\n" + "\n".join(imports) + "".join(rewrite_edge(x) for x in edges) + ")"
+    )
+    # print(expr)
+    return parse_lisp(expr)
 
 
 def setdir(filename):
@@ -149,15 +145,40 @@ def setdir(filename):
     os.chdir(fdir)
 
 
-def runner(program: str, filename: str):
+class CurrentDir:
+    def __init__(self, filename):
+        self.prev_dir = os.path.abspath(os.getcwd())
+        self.cur_dir = os.path.abspath(os.path.dirname(filename))
+
+    def __enter__(self):
+        # print("Switching to", self.cur_dir)
+        os.chdir(self.cur_dir)
+
+    def __exit__(self, type, value, traceback):
+        # print("Switching back to", self.prev_dir)
+        os.chdir(self.prev_dir)
+        if type:
+            print(type, value, traceback)
+
+
+def runner(program: str, filename: str, env=None, run=True):
     initialize()
-    setdir(filename)
-    global_env = standard_env()
-    edges = parse0(program.split("\n"))
-    print("edges", edges)
-    pgm = parse_edges(edges)
-    evalf(pgm, global_env)
-    finalize(filename)
+    with CurrentDir(filename):
+        ext = os.path.splitext(filename)[1]
+        if ".fbp" in ext:
+            pgm = parse_fbp(program.split("\n"))
+        elif ".lisp" in ext:
+            pgm = parse_lisp(program)
+        else:
+            raise ValueError(f"Invalid file extension {ext}, expecting .fbp or .lisp")
+        if env is None:
+            env = standard_env()
+        env.includes.add(filename)
+        print(f"evaluating {filename}")
+        evalf(pgm, env, run)
+        if not run:
+            print(f"included {filename}")
+        finalize(filename)
 
 
 def main():
@@ -172,7 +193,7 @@ def main():
         help="input file",
     )
     d = parser.parse_args()
-    runner(d.file.read(), d.file.name)
+    runner(d.file.read(), os.path.abspath(d.file.name))
 
 
 if __name__ == "__main__":

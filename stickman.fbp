@@ -1,4 +1,4 @@
-import circle from "./circle.fbp"
+#include "./circle.fbp"
 
 @param {theta} Int(choice[0, 30, 45, 60])
 limbs(start theta) -> move1(move 5 0)

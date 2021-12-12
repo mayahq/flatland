@@ -4,6 +4,7 @@
 import json
 import math
 import operator as op
+import os
 import random
 import time
 
@@ -361,18 +362,33 @@ def run_flow(env, flowname, rest):
     else:
         raise TypeError(f"cannot create flow from {flowname}")
     data = dict(position=pos, theta=theta)
-    print(flow)
+    # print(flow)
     flow(data)
     # print("flow output", a)
     print("DONE.")
+
+
+def include_file(filename, env):
+    assert filename.startswith('"') and filename.endswith(
+        '"'
+    ), "Filename needs to be a double-quoted string"
+    fname = os.path.abspath(filename.replace('"', ""))
+    globl = env.find("+")
+    if fname not in env.includes:
+        from flatland.lispy.parser import runner
+
+        with open(fname) as f:
+            subprogram = f.read()
+        runner(subprogram, fname, globl, run=False)
 
 
 def standard_env() -> Env:
     "An environment with some Scheme standard procedures."
     env = Env()
     env.name = "__global__"
-    seed = int(time.mktime(time.gmtime())) % 10000
-    random.seed(seed)
+    env.seed = int(time.mktime(time.gmtime())) % 10000
+    env.includes = set()
+    random.seed(env.seed)
     env.update(vars(math))  # sin, cos, sqrt, pi, ...
     env.update(
         {
@@ -406,7 +422,7 @@ def standard_env() -> Env:
     return env
 
 
-def evalf(x, env):
+def evalf(x, env, run=True):
     "Evaluate an expression in an environment."
     if isinstance(x, Symbol):  # variable reference
         return env.find(x)[x]
@@ -417,18 +433,17 @@ def evalf(x, env):
     op, *args = x
     if op == "quote":  # quotation
         return args[0]
+    elif op == "#include":
+        filename = args[0]
+        include_file(filename, env)
     elif op == "if":  # conditional
         (test, conseq, alt) = args
-        exp = conseq if evalf(test, env) else alt
-        return evalf(exp, env)
+        exp = conseq if evalf(test, env, run) else alt
+        return evalf(exp, env, run)
     elif op == "create-node":
         name, tp, *tpargs = args
         node = node_creator(env, name, tp, *tpargs)
         env[name] = node
-    elif op == "out!":
-        env.outputs.append(eval(args[0]))
-    elif op == "in!":
-        return evalf(env.input, env)
     elif op == "define-flow":
         tp, params, body = args
         env[tp] = FlowCreator(tp, params, body)
@@ -442,19 +457,20 @@ def evalf(x, env):
         fnp, tnp = args
         link_creator(env, fnp, tnp)
     elif op == "run-flow":
-        flowname, *rest = args
-        run_flow(env, flowname, rest)
+        if run:
+            flowname, *rest = args
+            run_flow(env, flowname, rest)
     elif op == "define":  # definition
         (symbol, exp) = args
-        env[symbol] = evalf(exp, env)
+        env[symbol] = evalf(exp, env, run)
     elif op == "set":  # assignment
         (symbol, exp) = args
-        env.find(symbol)[symbol] = evalf(exp, env)
+        env.find(symbol)[symbol] = evalf(exp, env, run)
     elif op == "lambda":  # procedure
         (parms, body) = args
         return Procedure(parms, body, env)
     else:  # procedure call
-        proc = evalf(op, env)
-        vals = [evalf(arg, env) for arg in args]
+        proc = evalf(op, env, run)
+        vals = [evalf(arg, env, run) for arg in args]
         answer = proc(*vals)
         return answer

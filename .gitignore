@@ -1,4 +1,5 @@
 # generated template files
+examples/
 train/
 test/
 tmp_*.py

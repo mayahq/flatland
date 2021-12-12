@@ -20,7 +20,7 @@ flatland-sample stickman.fbp
 The above runs the sample `stickman.fbp` program to generate a sample flatland image.
 
 ```
-import circle from "./circle.fbp"
+#include "./circle.fbp"
 
 limbs(start) -> move1(move 5 0)
 move1 -> turn2(turn 45)
