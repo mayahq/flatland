@@ -162,7 +162,7 @@ class MoveNode(Node):
     def __init__(self, name, dist, penup, env):
         super().__init__(name, env)
         self.dist = evalf(dist, self.env)
-        self.penup = evalf(penup, self.env)
+        self.penup = bool(evalf(penup, self.env))
 
     def __call__(self, data):
         if self.valid_message(data):
@@ -223,6 +223,13 @@ class Flow(Node):  # brain hurty
             self.add_message(data, node)
             return []
 
+        def to_dict(self):
+            return {"entries": list(self.entries), "exits": self.exits}
+
+        def clear(self):
+            for k, v in self.messages.items():
+                v.clear()
+
     def __init__(self, name, tp, params, opts, body, env):
         optvals = [evalf(x, env) for x in opts]
         super().__init__(name, env)
@@ -259,13 +266,13 @@ class Flow(Node):  # brain hurty
             for nodename in self.targets[k]:
                 for xdata in self.internal.messages[k]:
                     results.append((self.name, nodename, dict(**xdata)))
-            self.internal.messages[k].clear()
+        self.internal.clear()
         return results
 
     def to_dict(self):
         a = super().to_dict()
-        for x in self.params:
-            a[x] = self.env[x]
+        a["__internal__"] = self.internal.to_dict()
+        a["params"] = {x: self.env[x] for x in self.params}
         nodes = [a]
         for k, obj in self.env.items():
             if isinstance(obj, Node):
@@ -352,7 +359,7 @@ def create_exit(env, np, ports):
     env[node].targets[port].append("__internal__")
 
 
-def run_flow(env, flowname, rest):
+def run_flow(run, env, flowname, rest):
     d = env[flowname]
     if isinstance(d, FlowCreator):
         opts, pos, theta = rest
@@ -362,10 +369,12 @@ def run_flow(env, flowname, rest):
     else:
         raise TypeError(f"cannot create flow from {flowname}")
     data = dict(position=pos, theta=theta)
-    # print(flow)
-    flow(data)
-    # print("flow output", a)
-    print("DONE.")
+    if run:
+        flow(data)
+        # print("flow output", a)
+        print(flow)
+        print("DONE.")
+    return {"start": data, "flow": flow.to_dict()}
 
 
 def include_file(filename, env):
@@ -457,9 +466,8 @@ def evalf(x, env, run=True):
         fnp, tnp = args
         link_creator(env, fnp, tnp)
     elif op == "run-flow":
-        if run:
-            flowname, *rest = args
-            run_flow(env, flowname, rest)
+        flowname, *rest = args
+        return run_flow(run, env, flowname, rest)
     elif op == "define":  # definition
         (symbol, exp) = args
         env[symbol] = evalf(exp, env, run)
