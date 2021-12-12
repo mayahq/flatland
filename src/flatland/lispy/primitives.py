@@ -14,8 +14,8 @@ from flatland.utils.modding import initialize
 
 
 def GENERATE_NODEID():
-    return "{:10x}.fed{:05x}".format(
-        random.randrange(16 ** 10),
+    return "{:8x}.fed{:05x}".format(
+        random.randrange(16 ** 8),
         random.randrange(16 ** 5),
     )
 
@@ -95,14 +95,19 @@ class Node(Procedure):
             return results
         return []
 
+    @property
+    def id(self):
+        return self.env.name
+
     def to_dict(self):
+        outer = self.env.outer
         return {
             "name": self.name,
             "id": self.env.name,
             "type": type(self).__name__,
-            "scope": self.env.outer.name,
-            "sources": self.sources,
-            "targets": self.targets,
+            "scope": outer.name,
+            "sources": [outer[x].id for x in self.sources],
+            "targets": {k: [outer[x].id for x in v] for k, v in self.targets.items()},
         }
 
     def __repr__(self):
@@ -200,10 +205,11 @@ class TurnNode(Node):
 
 class Flow(Node):  # brain hurty
     class Internal:
-        def __init__(self):
+        def __init__(self, _id):
             self.entries = set()
             self.exits = dict()
             self.messages = dict()
+            self.id = _id
 
         def add_entry(self, node):
             self.entries.add(node)
@@ -223,8 +229,11 @@ class Flow(Node):  # brain hurty
             self.add_message(data, node)
             return []
 
-        def to_dict(self):
-            return {"entries": list(self.entries), "exits": self.exits}
+        def to_dict(self, env):
+            return {
+                "entries": list(env[x].id for x in self.entries),
+                "exits": {k: [env[x].id for x in v] for k, v in self.exits.items()},
+            }
 
         def clear(self):
             for k, v in self.messages.items():
@@ -236,7 +245,7 @@ class Flow(Node):  # brain hurty
         self.env = Env(params, optvals, env)
         self.tp = tp
         self.body = body
-        self.internal = Flow.Internal()
+        self.internal = Flow.Internal(self.id)
         self.params = params
         self.env["__internal__"] = self.internal
 
@@ -271,7 +280,7 @@ class Flow(Node):  # brain hurty
 
     def to_dict(self):
         a = super().to_dict()
-        a["__internal__"] = self.internal.to_dict()
+        a["__internal__"] = self.internal.to_dict(self.env)
         a["params"] = {x: self.env[x] for x in self.params}
         nodes = [a]
         for k, obj in self.env.items():

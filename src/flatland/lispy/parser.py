@@ -175,10 +175,12 @@ def runner(program: str, filename: str, env=None, run=True):
             env = standard_env()
         env.includes.add(filename)
         print(f"evaluating {filename}")
-        evalf(pgm, env, run)
-        if not run:
+        fdata = evalf(pgm, env, run)
+        if run:  # drawing happened
+            finalize(filename)
+        else:
             print(f"included {filename}")
-        finalize(filename)
+        return fdata
 
 
 def main():
