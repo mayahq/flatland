@@ -14,7 +14,7 @@ from flatland.utils.modding import initialize
 
 
 def GENERATE_NODEID():
-    return "{:8x}.fed{:05x}".format(
+    return "{:08x}.fed{:05x}".format(
         random.randrange(16 ** 8),
         random.randrange(16 ** 5),
     )
@@ -282,6 +282,7 @@ class Flow(Node):  # brain hurty
         a = super().to_dict()
         a["__internal__"] = self.internal.to_dict(self.env)
         a["params"] = {x: self.env[x] for x in self.params}
+        a["flowtype"] = self.tp
         nodes = [a]
         for k, obj in self.env.items():
             if isinstance(obj, Node):
@@ -383,7 +384,63 @@ def run_flow(run, env, flowname, rest):
         # print("flow output", a)
         print(flow)
         print("DONE.")
-    return {"start": data, "flow": flow.to_dict()}
+    data["id"] = "__START__"
+    data["type"] = "info"
+    data["targets"] = dict(out=[flow.id])
+    data["scope"] = "__global__"
+    data["name"] = "START"
+    fdata = flow.to_dict()
+    fdata[0]["sources"].append(data["id"])
+    fdata.insert(0, data)
+    return fdata
+
+
+def resolve_scope(fdata):
+    flow = {x["id"]: x for x in fdata}
+    subflows = [x for x in fdata if x["type"] == "Flow"]
+    for sf in subflows:
+        # for every subflow sf
+
+        # we need to connect its internal entry nodes to its sources
+        for dst_id in sf["__internal__"]["entries"]:
+            dst = flow[dst_id]
+            dst["sources"].remove(sf["id"])
+            for src_id in sf["sources"]:
+                src = flow[src_id]
+                for k, v in src["targets"].items():
+                    v.remove(sf["id"])
+                    v.append(dst_id)
+                dst["sources"].append(src_id)
+
+        # we need to connect its internal exit nodes to its targets
+        for k, v in sf["__internal__"]["exits"].items():
+            for src_id in v:
+                src = flow[src_id]
+                src["targets"][k].remove(sf["id"])
+                for dst_id in sf["targets"][k]:
+                    dst = flow[dst_id]
+                    dst["sources"].remove(sf["id"])
+                    src["targets"][k].append(dst)
+
+        # we need to change the scope for all its internal nodes
+        # to the parent scope
+        cur_scope = sf["id"]
+        par_scope = sf["scope"]
+        for v in flow.values():
+            if v["scope"] == cur_scope:
+                v["scope"] = par_scope
+
+        # now the subflow node is no longer needed,
+        # since all its internals have been resolved
+        flow.pop(sf["id"])
+
+    # if all subflows have been resolved
+    # every node is now in the global scope,
+    # and has a unique ID to distinguish itself
+    for k, v in flow.items():
+        v.pop("scope")
+        v.pop("name")
+    return flow
 
 
 def include_file(filename, env):
@@ -468,6 +525,7 @@ def evalf(x, env, run=True):
     elif op == "create-entry":
         node = args[0]
         env["__internal__"].add_entry(node)
+        env[node].sources.append("__internal__")
     elif op == "create-exit":
         np, *ports = args
         create_exit(env, np, ports)

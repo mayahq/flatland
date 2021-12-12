@@ -178,8 +178,6 @@ def runner(program: str, filename: str, env=None, run=True):
         fdata = evalf(pgm, env, run)
         if run:  # drawing happened
             finalize(filename)
-        else:
-            print(f"included {filename}")
         return fdata
 
 

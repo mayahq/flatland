@@ -26,49 +26,48 @@ def compare_subparts(part1, part2):
     return np.round(answer, 2)
 
 
-def compare_circles(node1, node2):
+def compare_loops(node1, node2):
+    den = 2
     num = 0
-    den = 0
-    for k in node1.keys():
-        if k in ("id", "theta"):
-            continue
-        a = compare_subparts(node1[k], node2[k])
-        num += a
-        den += 1
-    num += numdiff(node1["theta"] % 360, node2["theta"] % 360, 360)
-    den += 1
-    wt = num / den
-    return wt
+    for k in ["start", "end"]:
+        if node1[k] == node2[k]:
+            num += 1
+    return num / den
 
 
-def compare_lines(node1, node2):
+def compare_moves(node1, node2):
+    den = 2
     num = 0
-    den = 0
-    for k in node1.keys():
-        if k in ("id", "start", "end", "center"):
-            continue
-        a = compare_subparts(node1[k], node2[k])
-        num += a
-        den += 1
-    num += max(
-        [
-            compare_subparts(node1["start"], node2["start"])
-            + compare_subparts(node1["end"], node2["end"]),
-            compare_subparts(node1["start"], node2["end"])
-            + compare_subparts(node1["end"], node2["start"]),
-        ]
-    )
-    den += 2
-    wt = num / den
-    return wt
+    for k in ["dist", "penup"]:
+        if node1[k] == node2[k]:
+            num += 1
+    return num / den
+
+
+def compare_turns(node1, node2):
+    a = node1["theta"] % 360
+    b = node2["theta"] % 360
+    return numdiff(a, b, 360)
+
+
+def compare_info(node1, node2):
+    den = 2
+    num = 0
+    num += compare_subparts(node1["position"], node2["position"])
+    num += compare_turns(node1, node2)
+    return num / den
 
 
 def node_weighter(node1, node2):
     if node1["type"] == node2["type"]:
-        if node1["type"] == "circle":
-            return compare_circles(node1, node2)
-        elif node1["type"] == "line":
-            return compare_lines(node1, node2)
+        if node1["type"] == "LoopNode":
+            return compare_loops(node1, node2)
+        elif node1["type"] == "MoveNode":
+            return compare_moves(node1, node2)
+        elif node1["type"] == "TurnNode":
+            return compare_turns(node1, node2)
+        elif node1["type"] == "info":
+            return compare_info(node1, node2)
         else:
             return 0
     else:

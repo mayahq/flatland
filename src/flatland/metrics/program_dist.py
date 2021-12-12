@@ -6,6 +6,7 @@ import math
 import networkx as nx
 import numpy as np
 
+from flatland.lispy.primitives import resolve_scope
 from flatland.metrics.distances import FUNCTION_MAP
 from flatland.metrics.distances import LENIENCY
 
@@ -37,7 +38,14 @@ def get_nodemap(spec1, spec2, node_weighter):
     return nodemap
 
 
-def create_product_graph(nmap, flow1, flow2, edge_indicator):
+def get_edgetype(flow, k1, k2):
+    for t, v in flow[k1]["targets"].items():
+        if k2 in v:
+            return t  # edge exists and is of type t
+    return ""
+
+
+def create_product_graph(nmap, flow1, flow2):
     prodgraph = set()
 
     for k1a, k2a, wta in nmap:
@@ -46,9 +54,11 @@ def create_product_graph(nmap, flow1, flow2, edge_indicator):
             if k1a == k1b or k2a == k2b:
                 continue
 
-            # can't just map everything, so there needs to some check
-            # of "common substructure" here if you want speed
-            if edge_indicator(flow1[k1a], flow1[k1b], flow2[k2a], flow2[k2b]):
+            # can't just map everything, so there needs to some check of "common substructure"
+            # check the type of edge between the corresponding nodes
+            edge1 = get_edgetype(flow1, k1a, k1b)
+            edge2 = get_edgetype(flow2, k2a, k2b)
+            if edge1 == edge2 and wta > 0.5 and wtb > 0.5:
                 # add edge to product graph
                 ind1 = nmap.index((k1a, k2a, wta))
                 ind2 = nmap.index((k1b, k2b, wtb))
@@ -138,13 +148,11 @@ def node_similarity(subset, nodemap, flow1, flow2):
         return 0
 
 
-def compare_specs(s1, s2, distance):
-    flow1 = spec_as_dict(s1)
-    flow2 = spec_as_dict(s2)
-    nw, ei = FUNCTION_MAP[distance]
+def compare_specs(flow1, flow2, distance):
+    nw, _ = FUNCTION_MAP[distance]
     nodemap = get_nodemap(flow1, flow2, nw)
     # print("nodemap", nodemap)
-    prodgraph = create_product_graph(nodemap, flow1, flow2, ei)
+    prodgraph = create_product_graph(nodemap, flow1, flow2)
     # print("prodgraph", prodgraph)
     corr, exact = find_correspondence(prodgraph, nodemap, flow1, flow2)
     # print("correspondence", corr, len(corr))
@@ -154,4 +162,8 @@ def compare_specs(s1, s2, distance):
 
 
 def metric(spec1, spec2, distance="recursive"):
+    spec1 = resolve_scope(spec1)
+    spec2 = resolve_scope(spec2)
+    # print(spec1)
+    # print(spec2)
     return compare_specs(spec1, spec2, distance)
