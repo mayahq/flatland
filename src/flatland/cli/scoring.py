@@ -33,9 +33,10 @@ def check_files(files):
     check_file(b)
     ext_a = os.path.splitext(a)[-1]
     ext_b = os.path.splitext(b)[-1]
-    if ext_a == ext_b and (ext_a == ".lisp" or ext_a == ".fbp"):
+    valid_exts = (".lisp", ".fbp")
+    if ext_a in valid_exts and ext_b in valid_exts:
         return a, b
-    raise ValueError(f"provided files are not both .fbp or .lisp {ext_a, ext_b}")
+    raise ValueError(f"provided files are not .fbp or .lisp {ext_a, ext_b}")
 
 
 def run(file1, file2, metric_name):
