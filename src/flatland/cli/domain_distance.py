@@ -10,8 +10,6 @@ import pandas as pd
 from flatland.lispy.parser import runner as parse_and_run_flow
 from flatland.lispy.primitives import resolve_scope
 from flatland.metrics import program_distance
-from flatland.metrics.distances import FUNCTION_MAP
-from flatland.metrics.distances import LENIENCY
 
 
 def check_folder(folder):
@@ -34,24 +32,22 @@ def check_csv(fname):
 def get_data(filename):
     with open(filename) as f:
         fdata = parse_and_run_flow(f.read(), filename, env=None, run=False)
-    return fdata
+    return resolve_scope(fdata)
 
 
-def run(train_set, test_set, output_fname, metric_name):
+def run(train_set, test_set, output_fname):
     # print(train_set, test_set)
     final_scores = np.zeros((len(test_set), 1), np.float32)
     scores = np.zeros(len(train_set), np.float32)
     total = len(train_set) * len(test_set)
     count = 0
     for i, t_dash in enumerate(test_set):
+        p_dash = get_data(t_dash)
         for j, t in enumerate(train_set):
             count += 1
-            print(f"{count}/{total}: scoring {t_dash} and {t} =>", end=" ")
-            # SLOW, move p_dash outside the loop pls
-            p_dash = get_data(t_dash)
             p = get_data(t)
-            scores[j] = program_distance(p_dash, p, metric_name)
-            print(scores[j])
+            scores[j] = program_distance(p_dash, p)
+            print(f"{count}/{total}: scoring {t_dash} and {t} =>", scores[j])
         final_scores[i] = np.min(scores)
     DD = np.mean(final_scores)
     score_df = pd.DataFrame(
@@ -68,7 +64,6 @@ def main():
     parser = argparse.ArgumentParser(
         prog="flatland-ddist",
         description="find the domain distance between given sets by pairwise comparisons",
-        epilog="available distance metrics:\n" + "\n".join(FUNCTION_MAP.keys()),
         formatter_class=argparse.ArgumentDefaultsHelpFormatter,
     )
     parser.add_argument(
@@ -89,7 +84,7 @@ def main():
     )
 
     d = parser.parse_args()
-    run(d.train_set, d.test_set, d.output, "recursive")
+    run(d.train_set, d.test_set, d.output)
 
 
 if __name__ == "__main__":

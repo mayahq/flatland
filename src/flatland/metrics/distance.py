@@ -74,7 +74,21 @@ def node_weighter(node1, node2):
         return 0
 
 
+def get_edgetype(node1, node2):
+    k2 = node2["id"]
+    for t, v in node1["targets"].items():
+        if k2 in v:
+            return t  # edge exists and is of type t
+    return ""
+
+
 def edge_indicator(node1a, node1b, node2a, node2b):
-    dist_1 = compare_subparts(node1a["center"], node1b["center"])
-    dist_2 = compare_subparts(node2a["center"], node2b["center"])
-    return abs(dist_1 - dist_2) <= 5e-2
+    # check the edge between the corresponding nodes
+    et1 = get_edgetype(node1a, node1b)
+    et2 = get_edgetype(node2a, node2b)
+
+    # check the "back-edge" between them, because cycle
+    et1_r = get_edgetype(node1b, node1a)
+    et2_r = get_edgetype(node2b, node2a)
+
+    return (et1 == et2) and (et1_r == et2_r)

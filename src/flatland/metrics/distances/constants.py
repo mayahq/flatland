@@ -1,1 +1,0 @@
-LENIENCY = 20
