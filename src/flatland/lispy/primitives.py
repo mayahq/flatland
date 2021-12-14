@@ -402,8 +402,12 @@ def resolve_scope(fdata):
             for src_id in sf["sources"]:
                 src = flow[src_id]
                 for k, v in src["targets"].items():
-                    v.remove(sf["id"])
-                    v.append(dst_id)
+                    # a particular node can only be in one target location
+                    # so check and break if found
+                    if sf["id"] in v:
+                        v.remove(sf["id"])
+                        v.append(dst_id)
+                        break
                 dst["sources"].append(src_id)
 
         # we need to connect its internal exit nodes to its targets
@@ -414,7 +418,8 @@ def resolve_scope(fdata):
                 for dst_id in sf["targets"][k]:
                     dst = flow[dst_id]
                     dst["sources"].remove(sf["id"])
-                    src["targets"][k].append(dst)
+                    dst["sources"].append(src_id)
+                    src["targets"][k].append(dst_id)
 
         # we need to change the scope for all its internal nodes
         # to the parent scope
