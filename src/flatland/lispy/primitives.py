@@ -66,9 +66,25 @@ Atom = (Symbol, Number)
 Exp = (Atom, List)
 
 
+def validate_message(callmethod):
+    def wrapper(self, data0):
+        if data0.get("position", None):
+            config.TURTLE.moveto(data0["position"])
+            if data0.get("theta", None) is not None:
+                config.TURTLE.setheading(data0["theta"])
+            # python objects are by reference
+            # but we need a copy of data to avoid overwrites
+            # so copy the dictionary
+            data = dict(**data0)
+            return callmethod(self, data)
+        return []
+
+    return wrapper
+
+
 class Node(Procedure):
-    def __init__(self, name, env):
-        super().__init__((), (), Env((), (), env))
+    def __init__(self, name, parent_env):
+        super().__init__((), (), Env((), (), parent_env))
         self.name = name
         self.sources = []
         self.targets = {"out": []}
@@ -81,19 +97,9 @@ class Node(Procedure):
             results.append((self.name, nodename, outdata))
         return results
 
-    def valid_message(self, data):
-        if data.get("position", None):
-            config.TURTLE.moveto(data["position"])
-            config.TURTLE.setheading(data["theta"])
-            return True
-        return False
-
-    def __call__(self, data0):
-        if self.valid_message(data0):
-            data = dict(**data0)
-            results = self.forward(data)
-            return results
-        return []
+    @validate_message
+    def __call__(self, data):
+        return self.forward(data)
 
     @property
     def id(self):
@@ -114,25 +120,14 @@ class Node(Procedure):
         return json.dumps(self.to_dict(), indent=2)
 
 
-def loop_reset(node):
-    node.position = None
-    node.heading = None
-    for n2 in node.targets:
-        loop_reset(node.env[n2])
-
-
 class LoopNode(Node):
-    def __init__(self, name, varname, start, end, env):
-        super().__init__(name, env)
+    def __init__(self, name, varname, start, end, parent_env):
+        super().__init__(name, parent_env)
         self.start = evalf(start, self.env)
         self.end = evalf(end, self.env)
         self.varname = varname
         self.resolved_name = f"{self.env.name}:{self.varname}"
         self.targets["body"] = []
-
-    def reset(self):
-        self.i = self.start
-        loop_reset(self)
 
     def forward(self, outdata):
         outdata["position"] = config.TURTLE.position()
@@ -146,14 +141,12 @@ class LoopNode(Node):
             results.append((self.name, nodename, outdata))
         return results
 
-    def __call__(self, data0):
-        if self.valid_message(data0):
-            data = dict(**data0)
-            data[self.resolved_name] = data.get(self.resolved_name, self.start - 1)
-            if data[self.resolved_name] < self.end:
-                data[self.resolved_name] = data[self.resolved_name] + 1
-            return self.forward(data)
-        return []
+    @validate_message
+    def __call__(self, data):
+        data[self.resolved_name] = data.get(self.resolved_name, self.start - 1)
+        if data[self.resolved_name] < self.end:
+            data[self.resolved_name] = data[self.resolved_name] + 1
+        return self.forward(data)
 
     def to_dict(self):
         a = super().to_dict()
@@ -164,20 +157,19 @@ class LoopNode(Node):
 
 
 class MoveNode(Node):
-    def __init__(self, name, dist, penup, env):
-        super().__init__(name, env)
+    def __init__(self, name, dist, penup, parent_env):
+        super().__init__(name, parent_env)
         self.dist = evalf(dist, self.env)
         self.penup = bool(evalf(penup, self.env))
 
+    @validate_message
     def __call__(self, data):
-        if self.valid_message(data):
-            if self.penup:
-                config.TURTLE.penup()
-            config.TURTLE.forward(self.dist)
-            if self.penup:
-                config.TURTLE.pendown()
-            return self.forward(data)
-        return []
+        if self.penup:
+            config.TURTLE.penup()
+        config.TURTLE.forward(self.dist)
+        if self.penup:
+            config.TURTLE.pendown()
+        return self.forward(data)
 
     def to_dict(self):
         a = super().to_dict()
@@ -187,15 +179,14 @@ class MoveNode(Node):
 
 
 class TurnNode(Node):
-    def __init__(self, name, theta, env):
-        super().__init__(name, env)
-        self.theta = evalf(theta, env)
+    def __init__(self, name, theta, parent_env):
+        super().__init__(name, parent_env)
+        self.theta = evalf(theta, self.env)
 
+    @validate_message
     def __call__(self, data):
-        if self.valid_message(data):
-            config.TURTLE.left(self.theta)
-            return self.forward(data)
-        return []
+        config.TURTLE.left(self.theta)
+        return self.forward(data)
 
     def to_dict(self):
         a = super().to_dict()
@@ -239,10 +230,10 @@ class Flow(Node):  # brain hurty
             for k, v in self.messages.items():
                 v.clear()
 
-    def __init__(self, name, tp, params, opts, body, env):
-        optvals = [evalf(x, env) for x in opts]
-        super().__init__(name, env)
-        self.env = Env(params, optvals, env)
+    def __init__(self, name, tp, params, opts, body, parent_env):
+        super().__init__(name, parent_env)
+        optvals = [evalf(x, self.env) for x in opts]
+        self.env.update(zip(params, optvals))
         self.tp = tp
         self.body = body
         self.internal = Flow.Internal(self.id)
@@ -305,8 +296,8 @@ class FlowCreator:
         self.params = params
         self.body = body
 
-    def __call__(self, name, opts, env):
-        flow = Flow(name, self.tp, self.params, opts, self.body, env)
+    def __call__(self, name, opts, parent_env):
+        flow = Flow(name, self.tp, self.params, opts, self.body, parent_env)
         flow.install()
         return flow
 
@@ -321,7 +312,7 @@ def check_acyclic(flowenv, fromname, toname):
 
 
 def node_creator(env, name, tp, *args):
-    if env.get("name"):
+    if env.get(name):
         raise ValueError(f"node name {name} already exists")
     if tp == "loop":
         return LoopNode(name, *args, env)
@@ -387,6 +378,7 @@ def run_flow(run, env, flowname, rest):
     data["id"] = "__START__"
     data["type"] = "info"
     data["targets"] = dict(out=[flow.id])
+    data["sources"] = []
     data["scope"] = "__global__"
     data["name"] = "START"
     fdata = flow.to_dict()
@@ -440,8 +432,11 @@ def resolve_scope(fdata):
     # every node is now in the global scope,
     # and has a unique ID to distinguish itself
     for k, v in flow.items():
-        v.pop("scope")
+        assert v.pop("scope") == "__global__"
         v.pop("name")
+        # source information is now redundant, because
+        # targets define the entire flow anyway
+        v.pop("sources")
     return flow
 
 

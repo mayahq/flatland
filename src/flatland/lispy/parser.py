@@ -139,12 +139,6 @@ def parse_fbp(lines):
     return parse_lisp(expr)
 
 
-def setdir(filename):
-    fdir = os.path.abspath(os.path.dirname(filename))
-    print(fdir)
-    os.chdir(fdir)
-
-
 class CurrentDir:
     def __init__(self, filename):
         self.prev_dir = os.path.abspath(os.getcwd())
@@ -179,22 +173,3 @@ def runner(program: str, filename: str, env=None, run=True):
         if run:  # drawing happened
             finalize(filename)
         return fdata
-
-
-def main():
-    parser = argparse.ArgumentParser(
-        prog="flatland-lispy",
-        formatter_class=argparse.ArgumentDefaultsHelpFormatter,
-    )
-    parser.add_argument(
-        "file",
-        type=argparse.FileType("r", encoding="UTF-8"),
-        default=None,
-        help="input file",
-    )
-    d = parser.parse_args()
-    runner(d.file.read(), os.path.abspath(d.file.name))
-
-
-if __name__ == "__main__":
-    main()
