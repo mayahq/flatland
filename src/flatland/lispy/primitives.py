@@ -11,6 +11,9 @@ import time
 import flatland.utils.config as config
 from flatland.utils.modding import finalize
 from flatland.utils.modding import initialize
+from flatland.utils.randomizer import get_randomizer
+
+RANDOMIZE = False
 
 
 def GENERATE_NODEID():
@@ -18,6 +21,12 @@ def GENERATE_NODEID():
         random.randrange(16 ** 8),
         random.randrange(16 ** 5),
     )
+
+
+def isconst(x):
+    if isinstance(x, int) or isinstance(x, Number):
+        return True
+    return False
 
 
 class Symbol(str):
@@ -121,6 +130,8 @@ class Node(Procedure):
 
 
 class LoopNode(Node):
+    randomizer = get_randomizer("int", [1, 360])
+
     def __init__(self, name, varname, start, end, parent_env):
         super().__init__(name, parent_env)
         self.start = evalf(start, self.env)
@@ -128,6 +139,12 @@ class LoopNode(Node):
         self.varname = varname
         self.resolved_name = f"{self.env.name}:{self.varname}"
         self.targets["body"] = []
+
+        if RANDOMIZE and parent_env.outer.name == "__global__":
+            if isconst(end) and isconst(start):
+                print("randomizing end for", self.name)
+                self.start = 0
+                self.end = self.randomizer()
 
     def forward(self, outdata):
         outdata["position"] = config.TURTLE.position()
@@ -157,10 +174,21 @@ class LoopNode(Node):
 
 
 class MoveNode(Node):
+    dist_randomizer = get_randomizer("float", [0, 60])
+    penup_randomizer = get_randomizer("bool", 0.1)
+
     def __init__(self, name, dist, penup, parent_env):
         super().__init__(name, parent_env)
         self.dist = evalf(dist, self.env)
         self.penup = bool(evalf(penup, self.env))
+
+        if RANDOMIZE and parent_env.outer.name == "__global__":
+            if isconst(dist):
+                print("randomizing dist for", self.name)
+                self.dist = self.dist_randomizer()
+            if isconst(penup):
+                print("randomizing penup for", self.name)
+                self.penup = self.penup_randomizer()
 
     @validate_message
     def __call__(self, data):
@@ -179,9 +207,15 @@ class MoveNode(Node):
 
 
 class TurnNode(Node):
+    randomizer = get_randomizer("int", [0, 360])
+
     def __init__(self, name, theta, parent_env):
         super().__init__(name, parent_env)
         self.theta = evalf(theta, self.env)
+        if RANDOMIZE and parent_env.outer.name == "__global__":
+            if isconst(theta):
+                print("randomizing theta for", self.name)
+                self.theta = self.randomizer()
 
     @validate_message
     def __call__(self, data):
@@ -230,10 +264,11 @@ class Flow(Node):  # brain hurty
             for k, v in self.messages.items():
                 v.clear()
 
-    def __init__(self, name, tp, params, opts, body, parent_env):
+    def __init__(self, name, filename, tp, params, opts, body, parent_env):
         super().__init__(name, parent_env)
         optvals = [evalf(x, self.env) for x in opts]
         self.env.update(zip(params, optvals))
+        self.filename = filename
         self.tp = tp
         self.body = body
         self.internal = Flow.Internal(self.id)
@@ -274,6 +309,7 @@ class Flow(Node):  # brain hurty
         a["__internal__"] = self.internal.to_dict(self.env)
         a["params"] = {x: self.env[x] for x in self.params}
         a["flowtype"] = self.tp
+        a["filename"] = self.filename
         nodes = [a]
         for k, obj in self.env.items():
             if isinstance(obj, Node):
@@ -291,13 +327,27 @@ class Flow(Node):  # brain hurty
 
 
 class FlowCreator:
-    def __init__(self, tp, params, body):
+    def __init__(self, tp, params, randoms, body, filename):
         self.tp = tp
-        self.params = params
+        self.params = list(params)
+        self.randoms = randoms
+        self.rfuncs = {k: get_randomizer(v) for k, v in randoms.items()}
         self.body = body
+        self.filename = filename
 
     def __call__(self, name, opts, parent_env):
-        flow = Flow(name, self.tp, self.params, opts, self.body, parent_env)
+        if RANDOMIZE and self.randoms:
+            new_opts = []
+            for i, x in enumerate(opts):
+                if not isconst(x):
+                    new_opts.append(x)
+                else:
+                    new_opts.append(self.rfuncs[self.params[i]]())
+        else:
+            new_opts = opts
+        flow = Flow(
+            name, self.filename, self.tp, self.params, new_opts, self.body, parent_env
+        )
         flow.install()
         return flow
 
@@ -372,8 +422,7 @@ def run_flow(run, env, flowname, rest):
     data = dict(position=pos, theta=theta)
     if run:
         flow(data)
-        # print("flow output", a)
-        print(flow)
+        # print(flow)
         print("DONE.")
     data["id"] = "__START__"
     data["type"] = "info"
@@ -522,8 +571,14 @@ def evalf(x, env, run=True):
         node = node_creator(env, name, tp, *tpargs)
         env[name] = node
     elif op == "define-flow":
-        tp, params, body = args
-        env[tp] = FlowCreator(tp, params, body)
+        tp, params, randoms, body = args
+        filename = env.find("__file__")["__file__"]
+        rddict = dict()
+        for rdp in randoms:
+            parname, (rfunc, rparams) = rdp
+            rparams = [evalf(bd, env, run) for bd in rparams]
+            rddict[parname] = (rfunc, rparams)
+        env[tp] = FlowCreator(tp, params, rddict, body, filename)
     elif op == "create-entry":
         node = args[0]
         env["__internal__"].add_entry(node)

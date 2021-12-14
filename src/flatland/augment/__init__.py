@@ -1,2 +1,1 @@
-from .generators import *
-from .augmentor import *
+from .main import Augmentor

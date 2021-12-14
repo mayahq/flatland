@@ -53,13 +53,18 @@ def parse_lisp(program: str) -> Exp:
     return expr
 
 
-def rewrite_edge(edge):
+def rewrite_edge(edge, frandoms):
     fnode, tnode = edge
     answer = []
-    if "(start" in fnode:  # define-flow open
+    if "__randomize__" in fnode:  # randomizer parameter for upcoming flow
+        parname, body = tnode
+        frandoms.append(f"({parname} {body})")
+    elif "(start" in fnode:  # define-flow open
         fname, fparams = fnode.split("(")
+        paramfills = "".join(x for x in frandoms)
         fparams = fparams.replace("start", "(").replace("( ", "(")
-        answer.append(f"(define-flow {fname} {fparams} (\n")
+        frandoms.clear()
+        answer.append(f"(define-flow {fname} {fparams} ({paramfills}) (\n")
         tname, tprops = tnode.split("(")
         answer.append(f"(create-node {tname} {tprops}\n")
         answer.append(f"(create-entry {tname})\n")
@@ -100,40 +105,37 @@ def rewrite_edge(edge):
     return "".join(answer)
 
 
-def import_flow_from_file(flowname, filename):
-    print(flowname, filename)
-    with open(filename.strip('"')) as f:
-        edges = f.readlines()
-    start = 0
-    end = len(edges)
-    for i, edge in enumerate(edges):
-        if f"{flowname}(start" in edge:
-            start = i
-            continue
-        if f"{flowname}(end" in edge:
-            end = i + 1
-            break
-    edges = edges[start:end]
-    return parse_fbp(edges)
-
-
 def parse_fbp(lines):
     def edge_cleaner(s):
         fnode, tnode = s.split("->")
         return fnode.strip(), tnode.strip()
 
+    def param_cleaner(s):
+        parset, body = s.split("}")
+        parname = parset.split("{")[1]
+        return "__randomize__", (parname.strip(), body.strip())
+
     edges = []
     imports = []
+    rand_params = []
     for line in lines:
-        if len(line) == 0 or "@param" in line:
+        if len(line) == 0:
             continue
-        if "#include" in line:
+        elif "@param" in line:
+            rand_params.append(param_cleaner(line))
+        elif "#include" in line:
             imports.append(f"({line})")
         else:
+            edges.extend(rand_params)
             edges.append(edge_cleaner(line))
+            rand_params.clear()
     # print("edges", edges)
+    rand_params.clear()
     expr = (
-        "(begin\n" + "\n".join(imports) + "".join(rewrite_edge(x) for x in edges) + ")"
+        "(begin\n"
+        + "\n".join(imports)
+        + "".join(rewrite_edge(x, rand_params) for x in edges)
+        + ")"
     )
     # print(expr)
     return parse_lisp(expr)
@@ -157,6 +159,7 @@ class CurrentDir:
 
 def runner(program: str, filename: str, env=None, run=True):
     initialize()
+    filename = os.path.abspath(filename)
     with CurrentDir(filename):
         ext = os.path.splitext(filename)[1]
         if ".fbp" in ext:
@@ -168,8 +171,12 @@ def runner(program: str, filename: str, env=None, run=True):
         if env is None:
             env = standard_env()
         env.includes.add(filename)
+        t = env.get("__file__")
+        env["__file__"] = filename
         # print(f"evaluating {filename}")
         fdata = evalf(pgm, env, run)
         if run:  # drawing happened
             finalize(filename)
+        if t:
+            env["__file__"] = t
         return fdata

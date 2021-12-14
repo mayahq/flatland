@@ -1,9 +1,0 @@
-{% extends "basic.py.jinja" %}
-{% block program %}
-Warp({{items.start}})
-{%- for i in range(items.N) %}
-Move({{items.step}})
-Turn({{items.theta}})
-{%- endfor %}
-Stop()
-{% endblock program %}

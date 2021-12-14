@@ -1,5 +1,5 @@
 
-@param {theta} Int(choice[0, 45, 90, 135, 180])
+@param {theta} (choice (0 45 90 135 180))
 limbs(start theta) -> move1(move 5 0)
 move1 -> turn2(turn theta)
 turn2 -> move2(move 10 0)
@@ -10,7 +10,7 @@ move4 -> move5(move -10 1)
 move5 -> turn4(turn theta)
 turn4 -> limbs(end)
 
-@param {start} Int(choice[0, 45, 90, 135, 180])
+@param {nval} (choice (0 45 90 135 180))
 main(start nval) -> turn1(turn nval)
 turn1 -> dag(limbs 60)
 dag -> move8(move 5 0)

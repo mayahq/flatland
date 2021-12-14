@@ -1,7 +1,0 @@
-{% extends "basic.py.jinja" %}
-{% block program %}
-{%- for item in items %}
-Circle(({{item.x}}, {{item.y}}), {{item.r}})
-{%- endfor %}
-Stop()
-{% endblock program %}

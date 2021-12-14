@@ -1,7 +1,0 @@
-{% extends "basic.py.jinja" %}
-{% block program %}
-{%- for item in items %}
-Rectangle({{item.c1}}, {{item.l}}, {{item.b}}, {{item.theta}})
-{%- endfor %}
-Stop()
-{% endblock program %}
