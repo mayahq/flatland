@@ -1,56 +1,6 @@
-# From Peter Norvig's
-# (How to Write a (Lisp) Interpreter (in Python))
-# https://norvig.com/lispy.html
-# https://norvig.com/lis.py
-import argparse
 import json
-import os
-import sys
 
-from flatland.lispy.primitives import Atom
-from flatland.lispy.primitives import evalf
-from flatland.lispy.primitives import Exp
-from flatland.lispy.primitives import List
-from flatland.lispy.primitives import standard_env
-from flatland.lispy.primitives import Symbol
-from flatland.utils.modding import finalize
-from flatland.utils.modding import initialize
-
-
-def atom(token: str) -> Atom:
-    try:
-        return int(token)
-    except ValueError:
-        try:
-            return float(token)
-        except ValueError:
-            return Symbol(token)
-
-
-def read_from_tokens(tokens: List) -> Exp:
-    if len(tokens) == 0:
-        raise SyntaxError("unexpected EOF")
-    token = tokens.pop(0)
-    if token == "(":
-        L = List()
-        while tokens[0] != ")":
-            L.append(read_from_tokens(tokens))
-        tokens.pop(0)  # pop off ')'
-        return L
-    elif token == ")":
-        raise SyntaxError("unexpected )")
-    else:
-        return atom(token)
-
-
-def tokenize(chars: str) -> list:
-    return chars.replace("(", " ( ").replace(")", " ) ").split()
-
-
-def parse_lisp(program: str) -> Exp:
-    tokenl = tokenize(program)
-    expr = read_from_tokens(tokenl)
-    return expr
+from flatland.lang.lisp import parse as parse_lisp
 
 
 def rewrite_edge(edge, frandoms):
@@ -105,7 +55,7 @@ def rewrite_edge(edge, frandoms):
     return "".join(answer)
 
 
-def parse_fbp(lines):
+def parse(lines):
     def edge_cleaner(s):
         fnode, tnode = s.split("->")
         return fnode.strip(), tnode.strip()
@@ -139,44 +89,3 @@ def parse_fbp(lines):
     )
     # print(expr)
     return parse_lisp(expr)
-
-
-class CurrentDir:
-    def __init__(self, filename):
-        self.prev_dir = os.path.abspath(os.getcwd())
-        self.cur_dir = os.path.abspath(os.path.dirname(filename))
-
-    def __enter__(self):
-        # print("Switching to", self.cur_dir)
-        os.chdir(self.cur_dir)
-
-    def __exit__(self, type, value, traceback):
-        # print("Switching back to", self.prev_dir)
-        os.chdir(self.prev_dir)
-        if type:
-            print(type, value, traceback)
-
-
-def runner(program: str, filename: str, env=None, run=True):
-    initialize()
-    filename = os.path.abspath(filename)
-    with CurrentDir(filename):
-        ext = os.path.splitext(filename)[1]
-        if ".fbp" in ext:
-            pgm = parse_fbp(program.split("\n"))
-        elif ".lisp" in ext:
-            pgm = parse_lisp(program)
-        else:
-            raise ValueError(f"Invalid file extension {ext}, expecting .fbp or .lisp")
-        if env is None:
-            env = standard_env()
-        env.includes.add(filename)
-        t = env.get("__file__")
-        env["__file__"] = filename
-        # print(f"evaluating {filename}")
-        fdata = evalf(pgm, env, run)
-        if run:  # drawing happened
-            finalize(filename)
-        if t:
-            env["__file__"] = t
-        return fdata

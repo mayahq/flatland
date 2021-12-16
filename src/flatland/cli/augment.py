@@ -1,10 +1,11 @@
 import argparse
+import json
 import os
 import sys
-import json
 
 from flatland.augment import Augmentor
-from flatland.lispy.parser import runner
+from flatland.lang.run import main as runner
+
 
 def check_dir(path):
     if os.path.exists(path) and os.path.isdir(path):
@@ -19,7 +20,6 @@ def check_compl(val):
     if v2 > 0:
         return v2
     raise ValueError("invalid complexity")
-
 
 
 def main():
@@ -65,8 +65,6 @@ def main():
     print(json.dumps(augmentor.templates, indent=2))
     augmentor.generate_data_bulk(d.num_files)
     # augmentor.generate_data_bulk(2)
-
-
 
 
 if __name__ == "__main__":

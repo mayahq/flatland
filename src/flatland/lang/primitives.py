@@ -1,5 +1,5 @@
 # From Peter Norvig's (How to Write a (Lisp) Interpreter (in Python))
-# https://norvig.com/lispy.html
+# https://norvig.com/lang.html
 # https://norvig.com/lis.py
 import json
 import math
@@ -501,7 +501,7 @@ def include_file(filename, env):
     fname = os.path.abspath(filename.replace('"', ""))
     globl = env.find("+")
     if fname not in env.includes:
-        from flatland.lispy.parser import runner
+        from flatland.lang.run import main as runner
 
         with open(fname) as f:
             subprogram = f.read()

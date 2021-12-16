@@ -5,7 +5,7 @@ import math
 import networkx as nx
 import numpy as np
 
-from flatland.lispy.primitives import resolve_scope
+from flatland.lang.primitives import resolve_scope
 from flatland.metrics.distance import edge_indicator
 from flatland.metrics.distance import node_weighter
 

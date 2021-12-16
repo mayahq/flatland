@@ -1,6 +1,6 @@
 import argparse
 
-from flatland.lispy.parser import runner
+from flatland.lang.run import main as runner
 from flatland.utils.modding import finalize
 from flatland.utils.modding import initialize
 

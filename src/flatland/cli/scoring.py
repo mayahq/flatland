@@ -6,9 +6,9 @@ import sys
 import numpy as np
 from PIL import Image
 
-from flatland.lispy.parser import runner as parse_and_run_flow
-from flatland.lispy.primitives import resolve_scope
-from flatland.lispy.primitives import standard_env
+from flatland.lang.primitives import resolve_scope
+from flatland.lang.primitives import standard_env
+from flatland.lang.run import main as parse_and_run_flow
 from flatland.metrics import program_distance
 
 
