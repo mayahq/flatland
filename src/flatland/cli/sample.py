@@ -1,14 +1,13 @@
 import argparse
 
+import flatland.utils.config as CONFIG
 from flatland.lang.run import main as runner
-from flatland.utils.modding import finalize
-from flatland.utils.modding import initialize
 
 
 def main():
     parser = argparse.ArgumentParser(
         prog="flatland-sample",
-        description="sample script that generates PNG+JSON in the current directory",
+        description="script to draw PNG from a given file",
         formatter_class=argparse.ArgumentDefaultsHelpFormatter,
     )
     parser.add_argument(
@@ -17,7 +16,16 @@ def main():
         default=None,
         help="input file",
     )
+    parser.add_argument(
+        "-s", "--show-turtle", dest="show", default=False, action="store_true"
+    )
+    parser.add_argument(
+        "-r", "--randomize", dest="randomize", default=False, action="store_true"
+    )
+
     d = parser.parse_args()
+    CONFIG.SHOWTURTLE = d.show
+    CONFIG.RANDOMIZE = d.randomize
     runner(d.file.read(), d.file.name)
 
 

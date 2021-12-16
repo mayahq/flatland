@@ -8,12 +8,8 @@ import os
 import random
 import time
 
-import flatland.utils.config as config
-from flatland.utils.modding import finalize
-from flatland.utils.modding import initialize
+import flatland.utils.config as CONFIG
 from flatland.utils.randomizer import get_randomizer
-
-RANDOMIZE = False
 
 
 def GENERATE_NODEID():
@@ -78,9 +74,9 @@ Exp = (Atom, List)
 def validate_message(callmethod):
     def wrapper(self, data0):
         if data0.get("position", None):
-            config.TURTLE.moveto(data0["position"])
+            CONFIG.TURTLE.moveto(data0["position"])
             if data0.get("theta", None) is not None:
-                config.TURTLE.setheading(data0["theta"])
+                CONFIG.TURTLE.setheading(data0["theta"])
             # python objects are by reference
             # but we need a copy of data to avoid overwrites
             # so copy the dictionary
@@ -99,8 +95,8 @@ class Node(Procedure):
         self.targets = {"out": []}
 
     def forward(self, outdata):
-        outdata["position"] = config.TURTLE.position()
-        outdata["theta"] = config.TURTLE.heading()
+        outdata["position"] = CONFIG.TURTLE.position()
+        outdata["theta"] = CONFIG.TURTLE.heading()
         results = []
         for i, nodename in enumerate(self.targets["out"]):
             results.append((self.name, nodename, outdata))
@@ -140,15 +136,15 @@ class LoopNode(Node):
         self.resolved_name = f"{self.env.name}:{self.varname}"
         self.targets["body"] = []
 
-        if RANDOMIZE and parent_env.outer.name == "__global__":
+        if CONFIG.RANDOMIZE and parent_env.outer.name == "__global__":
             if isconst(end) and isconst(start):
                 print("randomizing end for", self.name)
                 self.start = 0
                 self.end = self.randomizer()
 
     def forward(self, outdata):
-        outdata["position"] = config.TURTLE.position()
-        outdata["theta"] = config.TURTLE.heading()
+        outdata["position"] = CONFIG.TURTLE.position()
+        outdata["theta"] = CONFIG.TURTLE.heading()
         results = []
         in_loop = outdata[self.resolved_name] < self.end
         targets = self.targets["body"] if in_loop else self.targets["out"]
@@ -182,7 +178,7 @@ class MoveNode(Node):
         self.dist = evalf(dist, self.env)
         self.penup = bool(evalf(penup, self.env))
 
-        if RANDOMIZE and parent_env.outer.name == "__global__":
+        if CONFIG.RANDOMIZE and parent_env.outer.name == "__global__":
             if isconst(dist):
                 print("randomizing dist for", self.name)
                 self.dist = self.dist_randomizer()
@@ -193,10 +189,10 @@ class MoveNode(Node):
     @validate_message
     def __call__(self, data):
         if self.penup:
-            config.TURTLE.penup()
-        config.TURTLE.forward(self.dist)
+            CONFIG.TURTLE.penup()
+        CONFIG.TURTLE.forward(self.dist)
         if self.penup:
-            config.TURTLE.pendown()
+            CONFIG.TURTLE.pendown()
         return self.forward(data)
 
     def to_dict(self):
@@ -212,14 +208,14 @@ class TurnNode(Node):
     def __init__(self, name, theta, parent_env):
         super().__init__(name, parent_env)
         self.theta = evalf(theta, self.env)
-        if RANDOMIZE and parent_env.outer.name == "__global__":
+        if CONFIG.RANDOMIZE and parent_env.outer.name == "__global__":
             if isconst(theta):
                 print("randomizing theta for", self.name)
                 self.theta = self.randomizer()
 
     @validate_message
     def __call__(self, data):
-        config.TURTLE.left(self.theta)
+        CONFIG.TURTLE.left(self.theta)
         return self.forward(data)
 
     def to_dict(self):
@@ -336,7 +332,7 @@ class FlowCreator:
         self.filename = filename
 
     def __call__(self, name, opts, parent_env):
-        if RANDOMIZE and self.randoms:
+        if CONFIG.RANDOMIZE and self.randoms:
             new_opts = []
             for i, x in enumerate(opts):
                 if not isconst(x):

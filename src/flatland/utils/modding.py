@@ -9,7 +9,7 @@ from turtle import TurtleScreen as BaseScreen
 
 from PIL import Image
 
-import flatland.utils.config as config
+import flatland.utils.config as CONFIG
 
 
 class MyScreen(BaseScreen):
@@ -86,41 +86,41 @@ class MyTurtle(BaseTurtle):
 
 
 def initialize():
-    if not config.inited:
-        config.inited = True
-        if os.getenv("SHOWTURTLE", 0):
-            config.TURTLE = turtle.Turtle()
-            config.TURTLE.moveto = lambda *args: MyTurtle.moveto(config.TURTLE, *args)
-            config.TURTLE.moveby = lambda *args: MyTurtle.moveby(config.TURTLE, *args)
-            config.TURTLE.updatelog = lambda *args: MyTurtle.updatelog(
-                config.TURTLE, *args
+    if not CONFIG.inited:
+        CONFIG.inited = True
+        if CONFIG.SHOWTURTLE:
+            CONFIG.TURTLE = turtle.Turtle()
+            CONFIG.TURTLE.moveto = lambda *args: MyTurtle.moveto(CONFIG.TURTLE, *args)
+            CONFIG.TURTLE.moveby = lambda *args: MyTurtle.moveby(CONFIG.TURTLE, *args)
+            CONFIG.TURTLE.updatelog = lambda *args: MyTurtle.updatelog(
+                CONFIG.TURTLE, *args
             )
-            config.TURTLE.clear = lambda *args: MyTurtle.clear(config.TURTLE, *args)
-            config.SCREEN = config.TURTLE.getscreen()
-            config.SCREEN.tracer(1, 0)
-            config.SCREEN.setworldcoordinates(0, 0, 128, 128)
-            config.CANVAS = config.SCREEN.getcanvas()
+            CONFIG.TURTLE.clear = lambda *args: MyTurtle.clear(CONFIG.TURTLE, *args)
+            CONFIG.SCREEN = CONFIG.TURTLE.getscreen()
+            CONFIG.SCREEN.tracer(1, 0)
+            CONFIG.SCREEN.setworldcoordinates(0, 0, 128, 128)
+            CONFIG.CANVAS = CONFIG.SCREEN.getcanvas()
         else:
-            config.ROOT = Tk()
-            config.ROOT.overrideredirect(1)
-            config.ROOT.withdraw()
+            CONFIG.ROOT = Tk()
+            CONFIG.ROOT.overrideredirect(1)
+            CONFIG.ROOT.withdraw()
 
-            config.CANVAS = Canvas(master=config.ROOT, width=256, height=256)
-            config.CANVAS.configure(scrollregion=(0, 0, 256, 256))
-            BaseScreen._canvas = config.CANVAS
-            BaseScreen._root = config.ROOT
-            config.SCREEN = MyScreen(config.CANVAS)
-            config.SCREEN.setworldcoordinates(0, 0, 128, 128)
-            config.TURTLE = MyTurtle(config.SCREEN)
+            CONFIG.CANVAS = Canvas(master=CONFIG.ROOT, width=256, height=256)
+            CONFIG.CANVAS.configure(scrollregion=(0, 0, 256, 256))
+            BaseScreen._canvas = CONFIG.CANVAS
+            BaseScreen._root = CONFIG.ROOT
+            CONFIG.SCREEN = MyScreen(CONFIG.CANVAS)
+            CONFIG.SCREEN.setworldcoordinates(0, 0, 128, 128)
+            CONFIG.TURTLE = MyTurtle(CONFIG.SCREEN)
 
-            assert config.TURTLE.getscreen() == config.SCREEN
-            assert config.SCREEN.getcanvas() == config.CANVAS
+            assert CONFIG.TURTLE.getscreen() == CONFIG.SCREEN
+            assert CONFIG.SCREEN.getcanvas() == CONFIG.CANVAS
 
 
 def finalize(fname):
-    if os.getenv("SHOWTURTLE", 0):
+    if CONFIG.SHOWTURTLE:
         input("Press Enter to exit")
-    turtle = config.TURTLE
+    turtle = CONFIG.TURTLE
     rawname = fname.split(".")[0]
     h, w = 256, 256
     ps = (
