@@ -88,6 +88,8 @@ def validate_message(callmethod):
 
 
 class Node(Procedure):
+    tp = "<unk>"
+
     def __init__(self, name, parent_env):
         super().__init__((), (), Env((), (), parent_env))
         self.name = name
@@ -115,7 +117,7 @@ class Node(Procedure):
         return {
             "name": self.name,
             "id": self.env.name,
-            "type": type(self).__name__,
+            "type": self.tp,
             "scope": outer.name,
             "sources": [outer[x].id for x in self.sources],
             "targets": {k: [outer[x].id for x in v] for k, v in self.targets.items()},
@@ -127,6 +129,7 @@ class Node(Procedure):
 
 class LoopNode(Node):
     randomizer = get_randomizer("int", [1, 360])
+    tp = "loop"
 
     def __init__(self, name, varname, start, end, parent_env):
         super().__init__(name, parent_env)
@@ -172,6 +175,7 @@ class LoopNode(Node):
 class MoveNode(Node):
     dist_randomizer = get_randomizer("float", [0, 60])
     penup_randomizer = get_randomizer("bool", 0.1)
+    tp = "move"
 
     def __init__(self, name, dist, penup, parent_env):
         super().__init__(name, parent_env)
@@ -204,6 +208,7 @@ class MoveNode(Node):
 
 class TurnNode(Node):
     randomizer = get_randomizer("int", [0, 360])
+    tp = "turn"
 
     def __init__(self, name, theta, parent_env):
         super().__init__(name, parent_env)
@@ -225,6 +230,8 @@ class TurnNode(Node):
 
 
 class Flow(Node):  # brain hurty
+    tp = "flow"
+
     class Internal:
         def __init__(self, _id):
             self.entries = set()
@@ -265,7 +272,7 @@ class Flow(Node):  # brain hurty
         optvals = [evalf(x, self.env) for x in opts]
         self.env.update(zip(params, optvals))
         self.filename = filename
-        self.tp = tp
+        self.flowtype = tp
         self.body = body
         self.internal = Flow.Internal(self.id)
         self.params = params
@@ -304,7 +311,7 @@ class Flow(Node):  # brain hurty
         a = super().to_dict()
         a["__internal__"] = self.internal.to_dict(self.env)
         a["params"] = {x: self.env[x] for x in self.params}
-        a["flowtype"] = self.tp
+        a["flowtype"] = self.flowtype
         a["filename"] = self.filename
         nodes = [a]
         for k, obj in self.env.items():
@@ -324,7 +331,7 @@ class Flow(Node):  # brain hurty
 
 class FlowCreator:
     def __init__(self, tp, params, randoms, body, filename):
-        self.tp = tp
+        self.flowtype = tp
         self.params = list(params)
         self.randoms = randoms
         self.rfuncs = {k: get_randomizer(v) for k, v in randoms.items()}
@@ -342,7 +349,13 @@ class FlowCreator:
         else:
             new_opts = opts
         flow = Flow(
-            name, self.filename, self.tp, self.params, new_opts, self.body, parent_env
+            name,
+            self.filename,
+            self.flowtype,
+            self.params,
+            new_opts,
+            self.body,
+            parent_env,
         )
         flow.install()
         return flow
@@ -436,7 +449,7 @@ def run_flow(run, env, flowname, rest):
 
 def resolve_scope(fdata):
     flow = {x["id"]: x for x in fdata}
-    subflows = [x for x in fdata if x["type"] == "Flow"]
+    subflows = [x for x in fdata if x["type"] == "flow"]
     for sf in subflows:
         # for every subflow sf
 

@@ -32,7 +32,7 @@ class CurrentDir:
 def parse_flow(program: str, filename: str):
     ext = os.path.splitext(filename)[1]
     if ".fbp" in ext:
-        expr = parse_fbp(program.split("\n"))
+        expr = parse_fbp(program)
     elif ".lisp" in ext:
         expr = parse_lisp(program)
     else:

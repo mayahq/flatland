@@ -60,11 +60,11 @@ def compare_info(node1, node2):
 
 def node_weighter(node1, node2):
     if node1["type"] == node2["type"]:
-        if node1["type"] == "LoopNode":
+        if node1["type"] == "loop":
             return compare_loops(node1, node2)
-        elif node1["type"] == "MoveNode":
+        elif node1["type"] == "move":
             return compare_moves(node1, node2)
-        elif node1["type"] == "TurnNode":
+        elif node1["type"] == "turn":
             return compare_turns(node1, node2)
         elif node1["type"] == "info":
             return compare_info(node1, node2)
