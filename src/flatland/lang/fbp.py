@@ -55,7 +55,9 @@ def rewrite_edge(edge, frandoms):
     return "".join(answer)
 
 
-def fbp_to_lisp(lines):
+def fbp_to_lisp(program):
+    lines = program.split("\n")
+
     def edge_cleaner(s):
         fnode, tnode = s.split("->")
         return fnode.strip(), tnode.strip()
@@ -92,5 +94,5 @@ def fbp_to_lisp(lines):
 
 
 def parse(program: str):
-    expr = fbp_to_lisp(program.split("\n"))
+    expr = fbp_to_lisp(program)
     return parse_lisp(expr)

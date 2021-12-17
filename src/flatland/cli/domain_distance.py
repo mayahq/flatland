@@ -7,6 +7,7 @@ import sys
 import numpy as np
 import pandas as pd
 
+import flatland.utils.config as CONFIG
 from flatland.lang.primitives import resolve_scope
 from flatland.lang.run import main as parse_and_run_flow
 from flatland.metrics import program_distance
@@ -31,7 +32,7 @@ def check_csv(fname):
 
 def get_data(filename):
     with open(filename) as f:
-        fdata = parse_and_run_flow(f.read(), filename, env=None, run=False)
+        _, fdata = parse_and_run_flow(f.read(), filename, env=None)
     return resolve_scope(fdata)
 
 
@@ -61,6 +62,7 @@ def run(train_set, test_set, output_fname):
 
 
 def main():
+    CONFIG.RUN = False
     parser = argparse.ArgumentParser(
         prog="flatland-ddist",
         description="find the domain distance between given sets by pairwise comparisons",

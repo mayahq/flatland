@@ -6,6 +6,7 @@ import sys
 import numpy as np
 from PIL import Image
 
+import flatland.utils.config as CONFIG
 from flatland.lang.primitives import resolve_scope
 from flatland.lang.primitives import standard_env
 from flatland.lang.run import main as parse_and_run_flow
@@ -21,10 +22,10 @@ def check_file(file):
 def score_specs(path1, path2):
     env = standard_env()
     with open(path1) as f1:
-        spec1 = parse_and_run_flow(f1.read(), f1.name, run=False, env=env)
+        _, spec1 = parse_and_run_flow(f1.read(), f1.name, env=env)
         spec1 = resolve_scope(spec1)
     with open(path2) as f2:
-        spec2 = parse_and_run_flow(f2.read(), f2.name, run=False, env=env)
+        _, spec2 = parse_and_run_flow(f2.read(), f2.name, env=env)
         spec2 = resolve_scope(spec2)
     return program_distance(spec1, spec2)
 
@@ -47,6 +48,7 @@ def run(file1, file2):
 
 
 def main():
+    CONFIG.RUN = False
     parser = argparse.ArgumentParser(
         prog="flatland-distance",
         description="find the distance between two FBP",

@@ -26,6 +26,7 @@ def main():
     d = parser.parse_args()
     CONFIG.SHOWTURTLE = d.show
     CONFIG.RANDOMIZE = d.randomize
+    CONFIG.RUN = True
     runner(d.file.read(), d.file.name)
 
 

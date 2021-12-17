@@ -36,10 +36,12 @@ class Number(float):
 class List(list):
     def __str__(self):
         if len(self) == 0:
-            return ""
+            return "()"
         else:
-            ans = str(self[0]) + "("
-            ans += ", ".join(str(x) for x in self[1:])
+            ans = "(" + str(self[0])
+            if len(self) > 1:
+                ans += " "
+            ans += " ".join(str(x) for x in self[1:])
             ans += ")"
             return ans
 
@@ -112,6 +114,10 @@ class Node(Procedure):
     def id(self):
         return self.env.name
 
+    @property
+    def parameters(self):
+        raise NotImplementedError()
+
     def to_dict(self):
         outer = self.env.outer
         return {
@@ -139,11 +145,17 @@ class LoopNode(Node):
         self.resolved_name = f"{self.env.name}:{self.varname}"
         self.targets["body"] = []
 
-        if CONFIG.RANDOMIZE and parent_env.outer.name == "__global__":
+        if CONFIG.RANDOMIZE and CONFIG.RUN and parent_env.outer.name == "__global__":
             if isconst(end) and isconst(start):
-                print("randomizing end for", self.name)
                 self.start = 0
                 self.end = self.randomizer()
+                end = self.end
+                start = self.start
+                print("randomizing end for", self.name, self.end)
+
+    @property
+    def parameters(self):
+        return self.varname, self.start, self.end
 
     def forward(self, outdata):
         outdata["position"] = CONFIG.TURTLE.position()
@@ -182,13 +194,15 @@ class MoveNode(Node):
         self.dist = evalf(dist, self.env)
         self.penup = bool(evalf(penup, self.env))
 
-        if CONFIG.RANDOMIZE and parent_env.outer.name == "__global__":
+        if CONFIG.RANDOMIZE and CONFIG.RUN and parent_env.outer.name == "__global__":
             if isconst(dist):
-                print("randomizing dist for", self.name)
                 self.dist = self.dist_randomizer()
+                print("randomizing dist for", self.name, self.dist)
+                dist = self.dist
             if isconst(penup):
-                print("randomizing penup for", self.name)
                 self.penup = self.penup_randomizer()
+                print("randomizing penup for", self.name, self.penup)
+                penup = self.penup
 
     @validate_message
     def __call__(self, data):
@@ -198,6 +212,10 @@ class MoveNode(Node):
         if self.penup:
             CONFIG.TURTLE.pendown()
         return self.forward(data)
+
+    @property
+    def parameters(self):
+        return self.dist, int(self.penup)
 
     def to_dict(self):
         a = super().to_dict()
@@ -213,15 +231,20 @@ class TurnNode(Node):
     def __init__(self, name, theta, parent_env):
         super().__init__(name, parent_env)
         self.theta = evalf(theta, self.env)
-        if CONFIG.RANDOMIZE and parent_env.outer.name == "__global__":
+        if CONFIG.RANDOMIZE and CONFIG.RUN and parent_env.outer.name == "__global__":
             if isconst(theta):
-                print("randomizing theta for", self.name)
                 self.theta = self.randomizer()
+                print("randomizing theta for", self.name, self.theta)
+                theta = self.theta
 
     @validate_message
     def __call__(self, data):
         CONFIG.TURTLE.left(self.theta)
         return self.forward(data)
+
+    @property
+    def parameters(self):
+        return (self.theta,)
 
     def to_dict(self):
         a = super().to_dict()
@@ -277,6 +300,10 @@ class Flow(Node):  # brain hurty
         self.internal = Flow.Internal(self.id)
         self.params = params
         self.env["__internal__"] = self.internal
+
+    @property
+    def parameters(self):
+        return tuple(self.env[k] for k in self.params)
 
     def install(self):
         for expr in self.body:
@@ -345,7 +372,9 @@ class FlowCreator:
                 if not isconst(x):
                     new_opts.append(x)
                 else:
-                    new_opts.append(self.rfuncs[self.params[i]]())
+                    opt = self.rfuncs[self.params[i]]()
+                    print(f"randomizing {self.params[i]} for {name} {opt}")
+                    new_opts.append(opt)
         else:
             new_opts = opts
         flow = Flow(
@@ -374,16 +403,18 @@ def node_creator(env, name, tp, *args):
     if env.get(name):
         raise ValueError(f"node name {name} already exists")
     if tp == "loop":
-        return LoopNode(name, *args, env)
+        node = LoopNode(name, *args, env)
     elif tp == "move":
-        return MoveNode(name, *args, env)
+        node = MoveNode(name, *args, env)
     elif tp == "turn":
-        return TurnNode(name, *args, env)
+        node = TurnNode(name, *args, env)
     elif isinstance(env.find(tp)[tp], FlowCreator):
         fc = env.find(tp)[tp]
-        return fc(name, args, env)
+        node = fc(name, args, env)
     else:
         raise TypeError(f"invalid node type {tp}")
+
+    return node
 
 
 def split_node_port(z, src=True):
@@ -419,7 +450,7 @@ def create_exit(env, np, ports):
     env[node].targets[port].append("__internal__")
 
 
-def run_flow(run, env, flowname, rest):
+def run_flow(env, flowname, rest):
     d = env[flowname]
     if isinstance(d, FlowCreator):
         opts, pos, theta = rest
@@ -429,7 +460,7 @@ def run_flow(run, env, flowname, rest):
     else:
         raise TypeError(f"cannot create flow from {flowname}")
     data = dict(position=pos, theta=theta)
-    if run:
+    if CONFIG.RUN:
         flow(data)
         # print(flow)
         print("DONE.")
@@ -514,7 +545,10 @@ def include_file(filename, env):
 
         with open(fname) as f:
             subprogram = f.read()
-        runner(subprogram, fname, globl, run=False)
+        t = CONFIG.RUN
+        CONFIG.RUN = False
+        runner(subprogram, fname, globl)
+        CONFIG.RUN = t
 
 
 def standard_env() -> Env:
@@ -557,7 +591,7 @@ def standard_env() -> Env:
     return env
 
 
-def evalf(x, env, run=True):
+def evalf(x, env):  # noqa: C901
     "Evaluate an expression in an environment."
     if isinstance(x, Symbol):  # variable reference
         return env.find(x)[x]
@@ -573,21 +607,30 @@ def evalf(x, env, run=True):
         include_file(filename, env)
     elif op == "if":  # conditional
         (test, conseq, alt) = args
-        exp = conseq if evalf(test, env, run) else alt
-        return evalf(exp, env, run)
+        exp = conseq if evalf(test, env) else alt
+        return evalf(exp, env)
     elif op == "create-node":
         name, tp, *tpargs = args
         node = node_creator(env, name, tp, *tpargs)
         env[name] = node
+        if CONFIG.RANDOMIZE and CONFIG.RUN:
+            x2 = List([op, name, tp, *node.parameters])
+            x.clear()
+            x.extend(x2)
     elif op == "define-flow":
         tp, params, randoms, body = args
         filename = env.find("__file__")["__file__"]
         rddict = dict()
         for rdp in randoms:
             parname, (rfunc, rparams) = rdp
-            rparams = [evalf(bd, env, run) for bd in rparams]
+            rparams = [evalf(bd, env) for bd in rparams]
             rddict[parname] = (rfunc, rparams)
         env[tp] = FlowCreator(tp, params, rddict, body, filename)
+        if CONFIG.RANDOMIZE and CONFIG.RUN:
+            x2 = List([op, tp, params, List(), body])
+            x.clear()
+            x.extend(x2)
+
     elif op == "create-entry":
         node = args[0]
         env["__internal__"].add_entry(node)
@@ -600,18 +643,18 @@ def evalf(x, env, run=True):
         link_creator(env, fnp, tnp)
     elif op == "run-flow":
         flowname, *rest = args
-        return run_flow(run, env, flowname, rest)
+        return run_flow(env, flowname, rest)
     elif op == "define":  # definition
         (symbol, exp) = args
-        env[symbol] = evalf(exp, env, run)
+        env[symbol] = evalf(exp, env)
     elif op == "set":  # assignment
         (symbol, exp) = args
-        env.find(symbol)[symbol] = evalf(exp, env, run)
+        env.find(symbol)[symbol] = evalf(exp, env)
     elif op == "lambda":  # procedure
         (parms, body) = args
         return Procedure(parms, body, env)
     else:  # procedure call
-        proc = evalf(op, env, run)
-        vals = [evalf(arg, env, run) for arg in args]
+        proc = evalf(op, env)
+        vals = [evalf(arg, env) for arg in args]
         answer = proc(*vals)
         return answer

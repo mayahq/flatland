@@ -5,6 +5,7 @@
 import json
 import os
 
+import flatland.utils.config as CONFIG
 from flatland.lang.fbp import parse as parse_fbp
 from flatland.lang.lisp import parse as parse_lisp
 from flatland.lang.primitives import evalf
@@ -40,7 +41,7 @@ def parse_flow(program: str, filename: str):
     return expr
 
 
-def exec_flow(expr, filename: str, env=None, run=True):
+def exec_flow(expr, filename: str, env=None):
     initialize()
     if env is None:
         env = standard_env()
@@ -50,8 +51,8 @@ def exec_flow(expr, filename: str, env=None, run=True):
     env["__file__"] = filename
 
     # print(f"evaluating {filename}")
-    flowdata = evalf(expr, env, run)
-    if run:  # drawing happened
+    flowdata = evalf(expr, env)
+    if CONFIG.RUN:  # drawing happened
         finalize(filename)
     if t:
         env["__file__"] = t
@@ -59,9 +60,11 @@ def exec_flow(expr, filename: str, env=None, run=True):
     return flowdata
 
 
-def main(program: str, filename: str, env=None, run=True):
+def main(program: str, filename: str, env=None):
     filename = os.path.abspath(filename)
     with CurrentDir(filename):
         expr = parse_flow(program, filename)
-        flowdata = exec_flow(expr, filename, env, run)
-        return flowdata
+        flowdata = exec_flow(expr, filename, env)
+        if CONFIG.RUN:
+            print(expr)
+        return expr, flowdata
