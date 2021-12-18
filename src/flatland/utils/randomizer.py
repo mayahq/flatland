@@ -1,6 +1,20 @@
 import random
 
 
+def GENERATE_NODEID():
+    return "{:08x}.fed{:05x}".format(
+        random.randrange(16 ** 8),
+        random.randrange(16 ** 5),
+    )
+
+
+def GENERATE_FILEID():
+    return "{:06x}-{:04x}".format(
+        random.randrange(16 ** 6),
+        random.randrange(16 ** 4),
+    )
+
+
 class BaseRandomVar:
     def __init__(self, **kwargs) -> None:
         self._set_params(**kwargs)

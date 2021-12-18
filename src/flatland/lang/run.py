@@ -42,7 +42,6 @@ def parse_flow(program: str, filename: str):
 
 
 def exec_flow(expr, filename: str, env=None):
-    initialize()
     if env is None:
         env = standard_env()
 
@@ -52,8 +51,6 @@ def exec_flow(expr, filename: str, env=None):
 
     # print(f"evaluating {filename}")
     flowdata = evalf(expr, env)
-    if CONFIG.RUN:  # drawing happened
-        finalize(filename)
     if t:
         env["__file__"] = t
 
@@ -61,10 +58,14 @@ def exec_flow(expr, filename: str, env=None):
 
 
 def main(program: str, filename: str, env=None):
+    initialize()  # technically, init only after parsing
     filename = os.path.abspath(filename)
     with CurrentDir(filename):
         expr = parse_flow(program, filename)
         flowdata = exec_flow(expr, filename, env)
-        if CONFIG.RUN:
-            print(expr)
-        return expr, flowdata
+    if CONFIG.RUN:  # drawing happened
+        basename = os.path.basename(filename)
+        cur_dir = os.getcwd()
+        localname = os.path.join(cur_dir, basename)
+        finalize(localname)
+    return expr, flowdata

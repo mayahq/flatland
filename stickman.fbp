@@ -1,4 +1,4 @@
-#include "./circle.fbp"
+#include "circle.fbp"
 
 @param {theta} (choice (30 45 60))
 limbs(start theta) -> move1(move 5 0)

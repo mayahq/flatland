@@ -1,1 +1,1 @@
-from .main import Augmentor
+from .single import main as single_file

@@ -3,6 +3,7 @@ examples/
 train/
 test/
 tmp_*.py
+outputs*/*
 outputs*/*.json
 outputs*/*.png
 *.csv

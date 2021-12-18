@@ -6,17 +6,12 @@ import math
 import operator as op
 import os
 import random
-import time
+from datetime import datetime
 
 import flatland.utils.config as CONFIG
+from flatland.library import internal_include
+from flatland.utils.randomizer import GENERATE_NODEID
 from flatland.utils.randomizer import get_randomizer
-
-
-def GENERATE_NODEID():
-    return "{:08x}.fed{:05x}".format(
-        random.randrange(16 ** 8),
-        random.randrange(16 ** 5),
-    )
 
 
 def isconst(x):
@@ -544,8 +539,9 @@ def include_file(filename, env):
     assert filename.startswith('"') and filename.endswith(
         '"'
     ), "Filename needs to be a double-quoted string"
-    fname = os.path.abspath(filename.replace('"', ""))
     globl = env.find("+")
+    fname = internal_include(filename.replace('"', ""))
+    fname = os.path.abspath(fname)
     if fname not in env.includes:
         from flatland.lang.run import main as runner
 
@@ -561,7 +557,7 @@ def standard_env() -> Env:
     "An environment with some Scheme standard procedures."
     env = Env()
     env.name = "__global__"
-    env.seed = int(time.mktime(time.gmtime())) % 10000
+    env.seed = datetime.now()
     env.includes = set()
     random.seed(env.seed)
     env.update(vars(math))  # sin, cos, sqrt, pi, ...

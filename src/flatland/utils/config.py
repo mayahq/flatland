@@ -6,3 +6,4 @@ TURTLE = None
 RANDOMIZE = False
 SHOWTURTLE = False
 RUN = False
+SKIPIMAGE = False

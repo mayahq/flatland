@@ -118,6 +118,8 @@ def initialize():
 
 
 def finalize(fname):
+    if CONFIG.SKIPIMAGE:
+        return
     if CONFIG.SHOWTURTLE:
         input("Press Enter to exit")
     turtle = CONFIG.TURTLE
