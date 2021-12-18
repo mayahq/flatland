@@ -38,7 +38,7 @@ setup_info = dict(
             "flatland-generate=flatland.cli.generator:main",
             "flatland-scoring=flatland.cli.scoring:main",
             "flatland-ddist=flatland.cli.domain_distance:main",
-            "flatland-sample=flatland.cli.sample:main",
+            "flatland-draw=flatland.cli.draw:main",
             "flatland-augment=flatland.cli.augment:main",
         ]
     },

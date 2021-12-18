@@ -6,7 +6,7 @@ from flatland.lang.run import main as runner
 
 def main():
     parser = argparse.ArgumentParser(
-        prog="flatland-sample",
+        prog="flatland-draw",
         description="script to draw PNG from a given file",
         formatter_class=argparse.ArgumentDefaultsHelpFormatter,
     )
