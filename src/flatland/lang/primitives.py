@@ -312,12 +312,12 @@ class Flow(Node):  # brain hurty
             if tnode == "__internal__":
                 self.internal(data, fnode)
             elif data:
-                if self.name == "_":
-                    print("Processing:", msg)
-                    print("yet to process:", messages)
-                    print()
                 results = self.env[tnode](data)
                 messages.extend(results)
+            if self.name == "_":
+                print("Processing:", msg)
+                print("yet to process:", messages)
+                print()
         return self.forward(None)
 
     def forward(self, data):
@@ -539,17 +539,24 @@ def include_file(filename, env):
     assert filename.startswith('"') and filename.endswith(
         '"'
     ), "Filename needs to be a double-quoted string"
+    filename = filename.replace('"', "")
     globl = env.find("+")
-    fname = internal_include(filename.replace('"', ""))
-    fname = os.path.abspath(fname)
-    if fname not in env.includes:
+    is_internal, fullname = internal_include(filename)
+
+    if is_internal:
+        localname = filename
+    else:
+        localname = None
+
+    if filename not in env.includes:
         from flatland.lang.run import main as runner
 
-        with open(fname) as f:
+        with open(fullname) as f:
             subprogram = f.read()
+
         t = CONFIG.RUN
         CONFIG.RUN = False
-        runner(subprogram, fname, globl)
+        runner(subprogram, filename, globl, localname)
         CONFIG.RUN = t
 
 

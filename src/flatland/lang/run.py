@@ -57,12 +57,14 @@ def exec_flow(expr, filename: str, env=None):
     return flowdata
 
 
-def main(program: str, filename: str, env=None):
+def main(program: str, filename: str, env=None, localname=None):
     initialize()  # technically, init only after parsing
     filename = os.path.abspath(filename)
+    if localname is None:
+        localname = filename
     with CurrentDir(filename):
-        expr = parse_flow(program, filename)
-        flowdata = exec_flow(expr, filename, env)
+        expr = parse_flow(program, localname)
+        flowdata = exec_flow(expr, localname, env)
     if CONFIG.RUN:  # drawing happened
         basename = os.path.basename(filename)
         cur_dir = os.getcwd()
