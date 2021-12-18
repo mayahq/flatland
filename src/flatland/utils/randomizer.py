@@ -21,6 +21,7 @@ class BaseRandomVar:
         return str(self.value)
 
     def __call__(self, pretty=False) -> str:
+        self._reset_value()
         if pretty:
             return self._prettify()
         return self.value

@@ -459,6 +459,12 @@ def run_flow(env, flowname, rest):
         flow = d
     else:
         raise TypeError(f"cannot create flow from {flowname}")
+
+    if CONFIG.RUN and CONFIG.RANDOMIZE:
+        pos = (pos[0] + MoveNode.dist_randomizer(), pos[1] + MoveNode.dist_randomizer())
+        pos = (pos[0] % 128, pos[1] % 128)
+        theta = TurnNode.randomizer()
+
     data = dict(position=pos, theta=theta)
     if CONFIG.RUN:
         flow(data)
