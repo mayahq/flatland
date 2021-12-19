@@ -9,7 +9,7 @@ import random
 from datetime import datetime
 
 import flatland.utils.config as CONFIG
-from flatland.library import internal_include
+from flatland.library import check_internal_dir
 from flatland.utils.randomizer import GENERATE_NODEID
 from flatland.utils.randomizer import get_randomizer
 
@@ -127,6 +127,9 @@ class Node(Procedure):
     def __repr__(self):
         return json.dumps(self.to_dict(), indent=2)
 
+    def __random_details__(self):
+        raise NotImplementedError()
+
 
 class LoopNode(Node):
     randomizer = get_randomizer("int", [1, 360])
@@ -178,6 +181,14 @@ class LoopNode(Node):
         a["varname"] = self.varname
         return a
 
+    def __random_details__(self):
+        return {
+            "function": self.tp,
+            "properties": ["start", "end", "varname"],
+            "path": None,
+            "rules": {"end": self.randomizer.to_dict()},
+        }
+
 
 class MoveNode(Node):
     dist_randomizer = get_randomizer("float", [0, 60])
@@ -218,6 +229,17 @@ class MoveNode(Node):
         a["penup"] = self.penup
         return a
 
+    def __random_details__(self):
+        return {
+            "function": self.tp,
+            "properties": ["dist", "penup"],
+            "path": None,
+            "rules": {
+                "dist": self.dist_randomizer.to_dict(),
+                "penup": self.penup_randomizer.to_dict(),
+            },
+        }
+
 
 class TurnNode(Node):
     randomizer = get_randomizer("int", [0, 360])
@@ -245,6 +267,15 @@ class TurnNode(Node):
         a = super().to_dict()
         a["theta"] = self.theta
         return a
+
+    @classmethod
+    def __random_details__(self):
+        return {
+            "function": self.tp,
+            "properties": ["theta"],
+            "path": None,
+            "rules": {"theta": self.randomizer.to_dict()},
+        }
 
 
 class Flow(Node):  # brain hurty
@@ -285,10 +316,11 @@ class Flow(Node):  # brain hurty
             for k, v in self.messages.items():
                 v.clear()
 
-    def __init__(self, name, filename, tp, params, opts, body, parent_env):
+    def __init__(self, name, creator, filename, tp, params, opts, body, parent_env):
         super().__init__(name, parent_env)
         optvals = [evalf(x, self.env) for x in opts]
         self.env.update(zip(params, optvals))
+        self.creator = creator
         self.filename = filename
         self.flowtype = tp
         self.body = body
@@ -314,7 +346,7 @@ class Flow(Node):  # brain hurty
             elif data:
                 results = self.env[tnode](data)
                 messages.extend(results)
-            if self.name == "_":
+            if self.env.outer.name == "__global__":
                 print("Processing:", msg)
                 print("yet to process:", messages)
                 print()
@@ -350,6 +382,9 @@ class Flow(Node):  # brain hurty
     def __repr__(self):
         return json.dumps(self.to_dict(), indent=2)
 
+    def __random_details__(self):
+        return self.creator.__random_details__()
+
 
 class FlowCreator:
     def __init__(self, tp, params, randoms, body, filename):
@@ -374,6 +409,7 @@ class FlowCreator:
             new_opts = opts
         flow = Flow(
             name,
+            self,
             self.filename,
             self.flowtype,
             self.params,
@@ -383,6 +419,14 @@ class FlowCreator:
         )
         flow.install()
         return flow
+
+    def __random_details__(self):
+        return {
+            "function": self.flowtype,
+            "properties": self.params,
+            "path": self.filename,
+            "rules": {k: v.to_dict() for k, v in self.rfuncs.items()},
+        }
 
 
 def check_acyclic(flowenv, fromname, toname):
@@ -449,7 +493,9 @@ def run_flow(env, flowname, rest):
     d = env[flowname]
     if isinstance(d, FlowCreator):
         opts, pos, theta = rest
-        flow = d("_", opts, env)
+        flowname = f"__{d.flowtype}__"
+        flow = d(flowname, opts, env)
+        env[flow.name] = flow
     elif isinstance(d, Flow):
         flow = d
     else:
@@ -541,7 +587,7 @@ def include_file(filename, env):
     ), "Filename needs to be a double-quoted string"
     filename = filename.replace('"', "")
     globl = env.find("+")
-    is_internal, fullname = internal_include(filename)
+    is_internal, fullname = check_internal_dir(filename)
 
     if is_internal:
         localname = filename

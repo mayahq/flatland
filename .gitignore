@@ -1,4 +1,6 @@
 # generated template files
+*.gv
+*.gv.pdf
 examples/
 train/
 test/

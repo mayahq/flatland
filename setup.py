@@ -26,7 +26,7 @@ setup_info = dict(
         "Pillow==8.3.1",
         "cliquematch==2.2.0",
     ],
-    extras_require={},
+    extras_require={"full": ["graphviz"]},
     zip_safe=False,
     classifiers=[
         "Programming Language :: Python :: 3.7",
@@ -35,11 +35,11 @@ setup_info = dict(
     ],
     entry_points={
         "console_scripts": [
-            "flatland-generate=flatland.cli.generator:main",
+            "flatland-draw=flatland.cli.draw:main",
             "flatland-scoring=flatland.cli.scoring:main",
             "flatland-ddist=flatland.cli.domain_distance:main",
-            "flatland-draw=flatland.cli.draw:main",
             "flatland-augment=flatland.cli.augment:main",
+            "flatland-library=flatland.cli.show_library:main",
         ]
     },
 )

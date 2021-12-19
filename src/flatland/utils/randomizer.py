@@ -1,3 +1,4 @@
+import json
 import random
 
 
@@ -40,6 +41,12 @@ class BaseRandomVar:
             return self._prettify()
         return self.value
 
+    def to_dict(self):
+        return {"type": "<unk>"}
+
+    def __str__(self):
+        return json.dumps(self.to_dict())
+
 
 class RandomInt(BaseRandomVar):
     def __init__(self, min=0, max=5):
@@ -47,6 +54,10 @@ class RandomInt(BaseRandomVar):
 
     def _reset_value(self):
         self.value = random.randrange(self.min, self.max)
+
+    def to_dict(self):
+        answer = dict(type="int", min=self.min, max=self.max)
+        return answer
 
 
 class RandomFloat(BaseRandomVar):
@@ -56,6 +67,10 @@ class RandomFloat(BaseRandomVar):
     def _reset_value(self):
         self.value = random.uniform(self.min, self.max)
 
+    def to_dict(self):
+        answer = dict(type="float", min=self.min, max=self.max)
+        return answer
+
 
 class RandomChoice(BaseRandomVar):
     def __init__(self, *choices):
@@ -63,6 +78,10 @@ class RandomChoice(BaseRandomVar):
 
     def _reset_value(self):
         self.value = random.choice(self.choices)
+
+    def to_dict(self):
+        answer = dict(type="choice", choices=self.choices)
+        return answer
 
 
 class RandomBool(BaseRandomVar):
@@ -74,6 +93,10 @@ class RandomBool(BaseRandomVar):
             self.value = True
         else:
             self.value = False
+
+    def to_dict(self):
+        answer = dict(type="bool", true_prob=self.true_prob)
+        return answer
 
 
 def get_randomizer(*vals):
