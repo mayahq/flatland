@@ -493,7 +493,8 @@ def run_flow(env, flowname, rest):
     d = env[flowname]
     if isinstance(d, FlowCreator):
         opts, pos, theta = rest
-        flowname = f"__{d.flowtype}__"
+        bname = os.path.basename(d.filename)
+        flowname = f"__{bname}:{d.flowtype}__"
         flow = d(flowname, opts, env)
         env[flow.name] = flow
     elif isinstance(d, Flow):

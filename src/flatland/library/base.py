@@ -79,7 +79,9 @@ class Encoder(json.JSONEncoder):
 
 def create_library(directory):
     lib = Library()
-    files = glob.glob(os.path.join(directory, "*.fbp"))
+    files = glob.glob(os.path.join(directory, "*.fbp")) + glob.glob(
+        os.path.join(directory, "*.lisp")
+    )
 
     env = standard_env()
     CONFIG.RANDOMIZE = False
