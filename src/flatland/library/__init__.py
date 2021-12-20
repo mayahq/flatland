@@ -1,3 +1,3 @@
-from .utils import check_internal_dir
-from .utils import get_internal_dir
-from .utils import set_internal_dir
+from .find import check_internal_dir
+from .find import get_internal_dir
+from .find import set_internal_dir

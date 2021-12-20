@@ -1,6 +1,6 @@
 import os
 
-__INTERNAL_DIR__ = os.path.dirname(os.path.abspath(__file__))
+__INTERNAL_DIR__ = None
 
 
 def get_internal_dir():
@@ -14,7 +14,7 @@ def set_internal_dir(directory):
     if os.path.exists(directory) and os.path.isdir(directory):
         __INTERNAL_DIR__ = directory
     else:
-        raise NotADirectoryError(f"could not set directory as {directory}")
+        raise NotADirectoryError(f"could not set library dir as {directory}")
 
 
 def check_internal_dir(filename: str):

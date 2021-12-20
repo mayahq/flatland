@@ -10,18 +10,19 @@ import pandas as pd
 import flatland.utils.config as CONFIG
 from flatland.lang.primitives import resolve_scope
 from flatland.lang.run import main as parse_and_run_flow
+from flatland.library import set_internal_dir
 from flatland.metrics import program_distance
+from flatland.utils.misc import check_dir
 
 
-def check_folder(folder):
-    if os.path.exists(folder) and os.path.isdir(folder):
-        files = glob.glob(os.path.join(folder, "*.fbp")) + glob.glob(
-            os.path.join(folder, "*.lisp")
-        )
-        if len(files) == 0:
-            raise ValueError(f"{folder} contains no files")
-        return files
-    raise ValueError(f"{folder} is invalid")
+def check_files(folder):
+    folder = check_dir(folder)
+    files = glob.glob(os.path.join(folder, "*.fbp")) + glob.glob(
+        os.path.join(folder, "*.lisp")
+    )
+    if len(files) == 0:
+        raise ValueError(f"{folder} contains no files")
+    return files
 
 
 def check_csv(fname):
@@ -71,11 +72,11 @@ def main():
     parser.add_argument(
         "-a",
         "--train-set",
-        type=check_folder,
-        help="folder containing training set JSONs",
+        type=check_files,
+        help="folder containing training set programs",
     )
     parser.add_argument(
-        "-b", "--test-set", type=check_folder, help="folder containing test set JSONs"
+        "-b", "--test-set", type=check_files, help="folder containing test set programs"
     )
     parser.add_argument(
         "-o",
@@ -84,8 +85,16 @@ def main():
         default="results.csv",
         help="output score matrix to a CSV",
     )
+    parser.add_argument(
+        "-l",
+        "--library",
+        type=check_dir,
+        default="./library",
+        help="folder containing primitives of library",
+    )
 
     d = parser.parse_args()
+    set_internal_dir(d.library)
     run(d.train_set, d.test_set, d.output)
 
 

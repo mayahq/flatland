@@ -1,20 +1,14 @@
 import argparse
 import json
-import os
 import sys
 
 from flatland.augment import single_file
 from flatland.lang.run import main as runner
-
-
-def check_dir(path):
-    if os.path.exists(path) and os.path.isdir(path):
-        return path
-    raise NotADirectoryError(path)
+from flatland.library import set_internal_dir
+from flatland.utils.misc import check_dir
 
 
 def main():
-
     parser = argparse.ArgumentParser(
         prog="flatland-augment",
         description="generate random programs from a given file",
@@ -40,8 +34,16 @@ def main():
         type=check_dir,
         help="Output directory to store generated data",
     )
+    parser.add_argument(
+        "-l",
+        "--library",
+        default="./library",
+        type=check_dir,
+        help="folder containing library of flows",
+    )
 
     d = parser.parse_args()
+    set_internal_dir(d.library)
     program = d.file.read()
     d.file.close()
     single_file(program, d.file.name, d.num_samples, d.output_dir)

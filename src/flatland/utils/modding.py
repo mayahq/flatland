@@ -123,7 +123,7 @@ def finalize(fname):
     if CONFIG.SHOWTURTLE:
         input("Press Enter to exit")
     turtle = CONFIG.TURTLE
-    rawname = fname.split(".")[0]
+    rawname = os.path.splitext(fname)[0]
     h, w = 256, 256
     ps = (
         turtle.getscreen()

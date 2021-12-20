@@ -1,5 +1,4 @@
 import argparse
-import os
 import tempfile
 
 import flatland.utils.config as CONFIG
@@ -8,12 +7,7 @@ from flatland.library import check_internal_dir
 from flatland.library import get_internal_dir
 from flatland.library import set_internal_dir
 from flatland.library.base import create_library
-
-
-def check_dir(s):
-    if os.path.exists(s) and os.path.isdir(s):
-        return os.path.abspath(s)
-    raise NotADirectoryError(f"{s} is not a valid directory")
+from flatland.utils.misc import check_dir
 
 
 def show_gv(lib):
@@ -39,9 +33,8 @@ def main():
         "-l",
         "--library",
         type=check_dir,
-        default=None,
-        help="folder containing primitives of library"
-        "(if None, uses internal library)",
+        default="./library",
+        help="folder containing primitives of library",
     )
     parser.add_argument(
         "-z",
@@ -53,8 +46,7 @@ def main():
     )
 
     d = parser.parse_args()
-    if d.library is None:
-        d.library = get_internal_dir()
+    set_internal_dir(d.library)
     a = create_library(d.library)
     print(a)
     if d.visualize:
