@@ -20,4 +20,4 @@ arms -> torso(move 20 0)
 torso -> legs(limbs limbsangle)
 legs -> stickman(end)
 
-{"position":[53,53]} -> stickman(10 45)
+{"position":[53,53], "theta":0} -> stickman(10 45)

@@ -10,13 +10,10 @@ import flatland.utils.config as CONFIG
 from flatland.lang.primitives import resolve_scope
 from flatland.lang.primitives import standard_env
 from flatland.lang.run import main as parse_and_run_flow
+from flatland.library import set_internal_dir
 from flatland.metrics import program_distance
-
-
-def check_file(file):
-    if os.path.exists(file) and os.path.isfile(file):
-        return file
-    raise ValueError(f"{file} is invalid")
+from flatland.utils.misc import check_dir
+from flatland.utils.misc import check_file
 
 
 def score_specs(path1, path2):
@@ -50,14 +47,18 @@ def run(file1, file2):
 def main():
     CONFIG.RUN = False
     parser = argparse.ArgumentParser(
-        prog="flatland-distance",
+        prog="flatland-scoring",
         description="find the distance between two FBP",
         formatter_class=argparse.ArgumentDefaultsHelpFormatter,
+    )
+    parser.add_argument(
+        "-l", "--library", default="./library", type=check_dir, help="library of flows"
     )
     parser.add_argument("file1", type=str)
     parser.add_argument("file2", type=str)
 
     d = parser.parse_args()
+    set_internal_dir(d.library)
     print("distance is:", run(d.file1, d.file2))
 
 
