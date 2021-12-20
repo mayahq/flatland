@@ -13,14 +13,15 @@ from flatland.utils.misc import check_dir
 def show_gv(lib):
     import graphviz
 
-    G = graphviz.Digraph("sample")
+    G = graphviz.Digraph("library")
     G.attr(rankdir="LR", size="8,5")
     for ind, p in lib.primitives.items():
         G.node(str(ind), p.function)
     for src, dsts in lib.connections.items():
         for dst in dsts:
             G.edge(str(src), str(dst))
-    G.view()
+    G.format = "png"
+    G.view(cleanup=True)
 
 
 def main():

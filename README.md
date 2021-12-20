@@ -183,7 +183,7 @@ composed of `a`.  The `flatland-library` command provides a JSON expressing the
 relationship and uses [`graphviz`][graphviz] Python package to visualize the
 digraph:
 
-![digraph showing program dependencies](./library/deps.pdf)
+![digraph showing program dependencies](./library/deps.png)
 
 ## Acknowledgements
 
