@@ -35,7 +35,10 @@ def main():
     CONFIG.SHOWTURTLE = d.show
     CONFIG.RANDOMIZE = d.randomize
     CONFIG.RUN = True
-    runner(d.file.read(), d.file.name)
+    expr, fdata = runner(d.file.read(), d.file.name)
+
+    if CONFIG.RANDOMIZE:
+        print(expr)
 
 
 if __name__ == "__main__":

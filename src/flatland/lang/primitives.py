@@ -507,11 +507,15 @@ def run_flow(env, flowname, rest):
         pos = (pos[0] % 128, pos[1] % 128)
         theta = TurnNode.randomizer()
 
-    data = dict(position=pos, theta=theta)
+    data = dict(position=List(pos), theta=theta)
     if CONFIG.RUN:
         flow(data)
         # print(flow)
         print("DONE.")
+    return flow, data
+
+
+def format_static(flow, data):
     data["id"] = "__START__"
     data["type"] = "info"
     data["targets"] = dict(out=[flow.id])
@@ -520,7 +524,7 @@ def run_flow(env, flowname, rest):
     data["name"] = "START"
     fdata = flow.to_dict()
     for x in fdata:
-        if x["name"] == "_":
+        if x["name"] == flow.name:
             x["sources"].append(data["id"])
     fdata.insert(0, data)
     return fdata
@@ -699,7 +703,20 @@ def evalf(x, env):  # noqa: C901
         link_creator(env, fnp, tnp)
     elif op == "run-flow":
         flowname, *rest = args
-        return run_flow(env, flowname, rest)
+        flow, start = run_flow(env, flowname, rest)
+        if CONFIG.RANDOMIZE and CONFIG.RUN:
+            x2 = List(
+                [
+                    op,
+                    flowname,
+                    List(flow.parameters),
+                    start["position"],
+                    start["theta"],
+                ]
+            )
+            x.clear()
+            x.extend(x2)
+        return format_static(flow, start)
     elif op == "define":  # definition
         (symbol, exp) = args
         env[symbol] = evalf(exp, env)
