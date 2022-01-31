@@ -90,13 +90,4 @@ def edge_indicator(node1a, node1b, node2a, node2b):
     et1_r = get_edgetype(node1b, node1a)
     et2_r = get_edgetype(node2b, node2a)
 
-    # this assumes that flow2 is a subgraph of flow1,
-    # therefore flow2 cannot have an edge (or back-edge)
-    # if flow1 doesn't have a corresponding edge
-    return et2 in et1 and et2_r in et1_r
-
-    if (et1 == "" and et2 != "") or (et1_r == "" and et2_r != ""):
-        return False
-    if (et2 != "" and et2 != et1) or (et2_r != "" and et2_r != et1_r):
-        return False
-    return True
+    return (et1 == et2) and (et1_r == et2_r)

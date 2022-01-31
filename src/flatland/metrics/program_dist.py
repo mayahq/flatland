@@ -63,7 +63,7 @@ def simple_corr(nmap, flow1, flow2):
 
 def trim_node_mappings(nmap, basic, flow1, flow2):
     smallermap = []
-    num_mappings = 100
+    num_mappings = 5
     map_count1 = {x: 0 for x in flow1.keys()}
     map_count2 = {x: 0 for x in flow2.keys()}
     for x in sorted(nmap, key=lambda x: x[2], reverse=True):
@@ -117,7 +117,7 @@ def large_graph_corr(pgraph, nmap, flow1, flow2, lower_bound=0):
     exact = True
     dens = density(pgraph, nmap)
     upper_bound = min([len(flow1), len(flow2)])
-    if dens > 0.9:
+    if dens > 0.85:
         # highly dense graphs => node mapping is not strict enough,
         # (too many nodes of same type) so computing the exact value is SLOW
         # hence approximate via heuristic (some form of penalty)
@@ -131,7 +131,7 @@ def large_graph_corr(pgraph, nmap, flow1, flow2, lower_bound=0):
         exact = False
     else:
         clique0 = G.get_max_clique(
-            lower_bound=lower_bound,
+            lower_bound=lower_bound - 1,
             upper_bound=upper_bound,
             use_heuristic=True,
             use_dfs=True,
@@ -182,8 +182,6 @@ def node_similarity(subset, nodemap, flow1, flow2):
 
 
 def compare_specs(flow1, flow2):
-    if len(flow2) < len(flow1):
-        flow1, flow2 = flow2, flow1
     nodemap = get_nodemap(flow1, flow2)
     # print("nodemap", nodemap)
 
@@ -194,9 +192,9 @@ def compare_specs(flow1, flow2):
     # this heuristic mapping is NOT 100% OPTIMAL,
     # but it is a useful lower bound to find the optimal
     upper_bound = min([len(flow1), len(flow2)])
-    if len(basic) == upper_bound and basic_wt > upper_bound * 0.8:
+    if len(basic) == upper_bound and basic_wt > upper_bound * 0.95:
         # all nodes have been mapped
-        # => this is an almost optimal mapping
+        # and this is an almost optimal mapping
         corr = basic
         exact = False
     else:
