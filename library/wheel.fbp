@@ -1,0 +1,15 @@
+#include "circle.fbp"
+
+@param {radius} (int (5 30))
+@param {spokes} (int (3 16))
+wheel(start radius spokes) -> circle1(circle radius)
+circle1 -> t0(turn 90)
+t0 -> m1(move radius 0)
+m1 -> loop1(loop i 0 spokes)
+loop1 body -> sp1(move radius 0)
+sp1 -> sp2(move (* -1 radius) 1)
+sp2 -> turn0(turn (/ 360 spokes))
+turn0 -> loop1
+loop1 -> wheel(end)
+
+{} -> wheel(20 12)

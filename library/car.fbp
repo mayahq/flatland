@@ -1,0 +1,22 @@
+#include "wheel.fbp"
+
+car(start wsize wspokes wdist) -> m0(move (* -1 wsize) 1)
+m0 -> w0(wheel wsize wspokes)
+w0 -> m1(move wsize 1)
+m1 -> t2(turn 90)
+t2 -> m2(move wdist 0)
+m2 -> w01(wheel wsize wspokes)
+w01 -> m11(move (* -1 wsize) 1)
+m11 -> t21(turn 180)
+t21 -> m30(move wsize 0)
+m30 -> t30(turn -90)
+t30 -> m31(move wsize 0)
+m31 -> t32(turn 90)
+t32 -> m33(move wsize 0)
+m33 -> t33(turn -90)
+t33 -> m34(move (abs (- wsize wdist)) 0)
+m34 -> t34(turn -90)
+t34 -> m35(move (* 2 wsize) 0)
+m35 -> car(end)
+
+{"position":[96,10], "theta":45} -> car(10 8 50)
