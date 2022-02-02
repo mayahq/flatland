@@ -1,0 +1,23 @@
+#include "circle.fbp"
+
+@param {theta} (choice (30 45 60))
+limbs(start theta) -> turn2(turn theta)
+turn2 -> move2(move 10 0)
+move2 -> move3(move -10 1) 
+move3 -> turn3(turn (* -2 theta))
+turn3 -> move4(move 10 0)
+move4 -> move5(move -10 1)
+move5 -> turn4(turn theta)
+turn4 -> move1(move 5 0)
+move1 -> limbs(end)
+
+@param {headsize} (int (5 20))
+@param {limbsangle} (choice (30 45 60))
+stickman2(start headsize limbsangle) -> legs(limbs limbsangle)
+legs -> torso(move 20 0)
+torso -> arms(limbs limbsangle)
+arms -> t0(turn -90)
+t0 -> head(circle headsize)
+head -> stickman(end)
+
+{"position":[53,23], "theta":90} -> stickman2(10 45)
