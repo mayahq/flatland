@@ -1,5 +1,6 @@
 import argparse
 import json
+import logging
 import sys
 
 from flatland.augment import single_file
@@ -41,8 +42,18 @@ def main():
         type=check_dir,
         help="folder containing library of flows",
     )
-
+    parser.add_argument(
+        "-v",
+        "--verbose",
+        default=False,
+        action="store_true",
+        help="show debugging information",
+    )
     d = parser.parse_args()
+    if d.verbose:
+        logging.basicConfig(level=logging.DEBUG)
+        logging.getLogger("PIL").propagate = False
+
     set_internal_dir(d.library)
     program = d.file.read()
     d.file.close()

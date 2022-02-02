@@ -1,4 +1,5 @@
 import argparse
+import logging
 import tempfile
 
 import flatland.utils.config as CONFIG
@@ -45,8 +46,18 @@ def main():
         action="store_true",
         help="visualize library dependencies with graphviz",
     )
-
+    parser.add_argument(
+        "-v",
+        "--verbose",
+        default=False,
+        action="store_true",
+        help="show debugging information",
+    )
     d = parser.parse_args()
+    if d.verbose:
+        logging.basicConfig(level=logging.DEBUG)
+        logging.getLogger("PIL").propagate = False
+
     set_internal_dir(d.library)
     a = create_library(d.library)
     print(a)

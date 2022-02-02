@@ -1,10 +1,10 @@
 import os
 
 
-def check_file(file):
-    if os.path.exists(file) and os.path.isfile(file):
-        return file
-    raise ValueError(f"{file} is invalid")
+def check_file(filename):
+    if os.path.exists(filename) and os.path.isfile(filename):
+        return filename
+    raise ValueError(f"{filename} is invalid")
 
 
 def check_dir(s):

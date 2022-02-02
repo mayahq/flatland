@@ -2,6 +2,7 @@
 # https://norvig.com/lang.html
 # https://norvig.com/lis.py
 import json
+import logging
 import math
 import operator as op
 import os
@@ -12,6 +13,8 @@ import flatland.utils.config as CONFIG
 from flatland.library import check_internal_dir
 from flatland.utils.randomizer import GENERATE_NODEID
 from flatland.utils.randomizer import get_randomizer
+
+logger = logging.getLogger("flatland.lang.primitives")
 
 
 def isconst(x):
@@ -154,7 +157,7 @@ class LoopNode(Node):
                 self.end = self.randomizer()
                 end = self.end
                 start = self.start
-                print("randomizing end for", self.name, self.end)
+                logger.info("randomizing end for", self.name, self.end)
 
     @property
     def parameters(self):
@@ -213,11 +216,11 @@ class MoveNode(Node):
         ):
             if isconst(dist):
                 self.dist = self.dist_randomizer()
-                print("randomizing dist for", self.name, self.dist)
+                logger.info("randomizing dist for", self.name, self.dist)
                 dist = self.dist
             if isconst(penup):
                 self.penup = self.penup_randomizer()
-                print("randomizing penup for", self.name, self.penup)
+                logger.info("randomizing penup for", self.name, self.penup)
                 penup = self.penup
 
     @validate_message
@@ -266,7 +269,7 @@ class TurnNode(Node):
         ):
             if isconst(theta):
                 self.theta = self.randomizer()
-                print("randomizing theta for", self.name, self.theta)
+                logger.info("randomizing theta for", self.name, self.theta)
                 theta = self.theta
 
     @validate_message
@@ -362,9 +365,8 @@ class Flow(Node):  # brain hurty
                 results = self.env[tnode](data)
                 messages.extend(results)
             if self.env.outer.name == "__global__":
-                print("Processing:", msg)
-                print("yet to process:", messages)
-                print()
+                logger.info(f"Processing: {msg}")
+                logger.info(f"yet to process: {messages}\n")
         return self.forward(None)
 
     def forward(self, data):
@@ -418,7 +420,7 @@ class FlowCreator:
                     new_opts.append(x)
                 else:
                     opt = self.rfuncs[self.params[i]]()
-                    print(f"randomizing {self.params[i]} for {name} {opt}")
+                    logger.info(f"randomizing {self.params[i]} for {name} {opt}")
                     new_opts.append(opt)
         else:
             new_opts = opts
@@ -526,7 +528,6 @@ def run_flow(env, flowname, rest):
     if CONFIG.RUN:
         flow(data)
         # print(flow)
-        print("DONE.")
     return flow, data
 
 

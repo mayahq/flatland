@@ -1,4 +1,5 @@
 import json
+import logging
 import os
 import turtle
 from io import BytesIO
@@ -10,6 +11,8 @@ from turtle import TurtleScreen as BaseScreen
 from PIL import Image
 
 import flatland.utils.config as CONFIG
+
+logger = logging.getLogger("flatland.utils.modding")
 
 
 class MyScreen(BaseScreen):
@@ -101,7 +104,9 @@ class MyTurtle(BaseTurtle):
 def initialize():
     if not CONFIG.inited:
         CONFIG.inited = True
+        logger.info("Initializing turtle")
         if CONFIG.SHOWTURTLE:
+            logger.info("Using default Turtle/Screen objects with patched methods")
             CONFIG.TURTLE = turtle.Turtle()
             CONFIG.TURTLE.moveto = lambda *args: MyTurtle.moveto(CONFIG.TURTLE, *args)
             CONFIG.TURTLE.moveby = lambda *args: MyTurtle.moveby(CONFIG.TURTLE, *args)
@@ -115,6 +120,7 @@ def initialize():
             CONFIG.SCREEN.setworldcoordinates(0, 0, 128, 128)
             CONFIG.CANVAS = CONFIG.SCREEN.getcanvas()
         else:
+            logger.info("Using custom Turtle object with hidden screen")
             CONFIG.ROOT = Tk()
             CONFIG.ROOT.overrideredirect(1)
             CONFIG.ROOT.withdraw()

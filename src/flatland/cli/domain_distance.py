@@ -1,6 +1,7 @@
 import argparse
 import glob
 import json
+import logging
 import os
 import sys
 
@@ -88,8 +89,18 @@ def main():
         default="./library",
         help="folder containing primitives of library",
     )
-
+    parser.add_argument(
+        "-v",
+        "--verbose",
+        default=False,
+        action="store_true",
+        help="show debugging information",
+    )
     d = parser.parse_args()
+    if d.verbose:
+        logging.basicConfig(level=logging.DEBUG)
+        logging.getLogger("PIL").propagate = False
+
     set_internal_dir(d.library)
     run(d.train_set, d.test_set, d.output)
 

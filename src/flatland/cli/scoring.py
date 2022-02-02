@@ -1,5 +1,6 @@
 import argparse
 import json
+import logging
 import os
 import sys
 
@@ -56,8 +57,17 @@ def main():
     )
     parser.add_argument("file1", type=str)
     parser.add_argument("file2", type=str)
-
+    parser.add_argument(
+        "-v",
+        "--verbose",
+        default=False,
+        action="store_true",
+        help="show debugging information",
+    )
     d = parser.parse_args()
+    if d.verbose:
+        logging.basicConfig(level=logging.DEBUG)
+        logging.getLogger("PIL").propagate = False
     set_internal_dir(d.library)
     print("distance is:", run(d.file1, d.file2))
 

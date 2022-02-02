@@ -1,5 +1,6 @@
 # distance between two programs
 # compare the JSON and generate a subset mapping using the association graph
+import logging
 import math
 from typing import NamedTuple
 
@@ -9,6 +10,8 @@ import numpy as np
 from flatland.lang.primitives import resolve_scope
 from flatland.metrics.distance import edge_indicator
 from flatland.metrics.distance import node_weighter
+
+logger = logging.getLogger("flatland.metrics.program_dist")
 
 
 class NodeMapping(NamedTuple):
@@ -57,7 +60,9 @@ def simple_corr(nmap, flow1, flow2):
                 keys2.remove(k2)
                 awt += wt
                 answer.append(NodeMapping(k1, k2, wt))
-    # print("simple method gets a mapping of size", len(answer), awt)
+    logger.info(
+        f"simple method gets a mapping of size {len(answer)}, with weight {awt}"
+    )
     return answer, awt
 
 
@@ -73,7 +78,7 @@ def trim_node_mappings(nmap, basic, flow1, flow2):
             map_count1[x[0]] += 1
             map_count2[x[1]] += 1
             smallermap.append(x)
-    # print("reduced nodes to", len(smallermap), "from", len(nmap))
+    logger.info(f"reduced nodes to {len(smallermap)} from {len(nmap)}")
     return smallermap
 
 
@@ -117,6 +122,7 @@ def large_graph_corr(pgraph, nmap, flow1, flow2, lower_bound=0):
     exact = True
     dens = density(pgraph, nmap)
     upper_bound = min([len(flow1), len(flow2)])
+    logger.info(f"bounds for the clique search is [{lower_bound-1},{upper_bound}]")
     if dens > 0.85:
         # highly dense graphs => node mapping is not strict enough,
         # (too many nodes of same type) so computing the exact value is SLOW
@@ -141,7 +147,9 @@ def large_graph_corr(pgraph, nmap, flow1, flow2, lower_bound=0):
     # the multiple possible maxima wrt weights,
     # but it can be done if needed
     subset = [nmap[i - 1] for i in clique0]
-    # print(len(subset), lower_bound, G.get_clique_weight(clique0))
+    logger.info(
+        f"obtained clique of size {len(subset)}, weight = {G.get_clique_weight(clique0)}"
+    )
     return subset, exact
 
 
@@ -163,11 +171,8 @@ def find_correspondence(pgraph, nmap, flow1, flow2, lower_bound=0):
     if len(pgraph) < 1000:
         return small_graph_corr(pgraph, nmap, flow1, flow2, lower_bound)
     else:
-        print(
-            "large graph computation",
-            f"V = {len(nmap)}",
-            f"E = {len(pgraph)}",
-            density(pgraph, nmap),
+        logger.info(
+            f"large graph: V = {len(nmap)}, E = {len(pgraph)} density = {density(pgraph, nmap)}"
         )
         return large_graph_corr(pgraph, nmap, flow1, flow2, lower_bound)
 
