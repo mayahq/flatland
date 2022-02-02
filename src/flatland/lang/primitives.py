@@ -51,7 +51,12 @@ class Env(dict):
 
     def find(self, var):
         "Find the innermost Env where var appears."
-        return self if (var in self) else self.outer.find(var)
+        if var in self:
+            return self
+        elif self.outer is not None:
+            return self.outer.find(var)
+        else:
+            raise AttributeError(f"Unable to find {var}")
 
 
 class Procedure:
@@ -200,7 +205,12 @@ class MoveNode(Node):
         self.dist = evalf(dist, self.env)
         self.penup = bool(evalf(penup, self.env))
 
-        if CONFIG.RANDOMIZE and CONFIG.RUN and parent_env.outer.name == "__global__":
+        if (
+            False
+            and CONFIG.RANDOMIZE
+            and CONFIG.RUN
+            and parent_env.outer.name == "__global__"
+        ):
             if isconst(dist):
                 self.dist = self.dist_randomizer()
                 print("randomizing dist for", self.name, self.dist)
@@ -248,7 +258,12 @@ class TurnNode(Node):
     def __init__(self, name, theta, parent_env):
         super().__init__(name, parent_env)
         self.theta = evalf(theta, self.env)
-        if CONFIG.RANDOMIZE and CONFIG.RUN and parent_env.outer.name == "__global__":
+        if (
+            False
+            and CONFIG.RANDOMIZE
+            and CONFIG.RUN
+            and parent_env.outer.name == "__global__"
+        ):
             if isconst(theta):
                 self.theta = self.randomizer()
                 print("randomizing theta for", self.name, self.theta)

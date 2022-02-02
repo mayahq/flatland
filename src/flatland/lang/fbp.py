@@ -15,7 +15,8 @@ def rewrite_edge(edge, frandoms):
         fparams = fparams.replace("start", "(").replace("( ", "(")
         frandoms.clear()
         answer.append(f"(define-flow {fname} {fparams} ({paramfills}) (\n")
-        tname, tprops = tnode.split("(")
+        tname, *tprops = tnode.split("(")
+        tprops = "(".join(tprops)
         answer.append(f"(create-node {tname} {tprops}\n")
         answer.append(f"(create-entry {tname})\n")
     elif "{" in fnode:  # defining the main flow
