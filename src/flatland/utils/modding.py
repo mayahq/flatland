@@ -84,6 +84,19 @@ class MyTurtle(BaseTurtle):
         self.cur_id += 1
         self.assembly.append(obj)
 
+    def forward(self, distance):
+        BaseTurtle.forward(self, distance)
+        x, y = self.position()
+        while x < 0:
+            x = 128 + x
+        while y < 0:
+            y = 128 + y
+        x = x % 128
+        y = y % 128
+        self.penup()
+        self.setposition(x, y)
+        self.pendown()
+
 
 def initialize():
     if not CONFIG.inited:
@@ -96,6 +109,7 @@ def initialize():
                 CONFIG.TURTLE, *args
             )
             CONFIG.TURTLE.clear = lambda *args: MyTurtle.clear(CONFIG.TURTLE, *args)
+            CONFIG.TURTLE.forward = lambda *args: MyTurtle.forward(CONFIG.TURTLE, *args)
             CONFIG.SCREEN = CONFIG.TURTLE.getscreen()
             CONFIG.SCREEN.tracer(1, 0)
             CONFIG.SCREEN.setworldcoordinates(0, 0, 128, 128)
