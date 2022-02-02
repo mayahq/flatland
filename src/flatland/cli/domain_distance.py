@@ -4,6 +4,7 @@ import json
 import os
 import sys
 
+import joblib
 import numpy as np
 import pandas as pd
 
@@ -40,24 +41,19 @@ def get_data(filename):
 def run(train_set, test_set, output_fname):
     # print(train_set, test_set)
     final_scores = np.zeros((len(test_set), 1), np.float32)
-    scores = np.zeros(len(train_set), np.float32)
-    total = len(train_set) * len(test_set)
-    count = 0
-    for i, t_dash in enumerate(test_set):
-        p_dash = get_data(t_dash)
-        for j, t in enumerate(train_set):
-            count += 1
-            p = get_data(t)
-            scores[j] = program_distance(p_dash, p)
-            print(f"{count}/{total}: scoring {t_dash} and {t} =>", scores[j])
-        final_scores[i] = np.min(scores)
+    with joblib.Parallel(n_jobs=-1) as parallel:
+        for i, t_dash in enumerate(test_set):
+            p_dash = get_data(t_dash)
+            scores = parallel(
+                joblib.delayed(program_distance)(p_dash, get_data(t)) for t in train_set
+            )
+            final_scores[i] = np.min(scores)
     DD = np.mean(final_scores)
     score_df = pd.DataFrame(
         final_scores,
         columns=["domain_distance"],
         index=[os.path.basename(x) for x in test_set],
     )
-    print()
     print("domain_distance is", DD)
     score_df.to_csv(output_fname, header=True, index=True)
 

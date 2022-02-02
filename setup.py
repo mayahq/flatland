@@ -24,6 +24,7 @@ setup_info = dict(
         "pandas==1.2.3",
         "networkx==2.5.1",
         "Pillow==8.3.1",
+        "joblib>=1.0.1",
         "cliquematch>=3.0.0",
     ],
     extras_require={"full": ["graphviz"]},
