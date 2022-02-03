@@ -1,0 +1,9 @@
+@param {n} (int (3 12))
+@param {side} (int (5 30))
+polygon(start side n) -> loop0(loop i 0 n)
+loop0 body -> m0(move side 0)
+m0 -> t0(turn (/ 360 n))
+t0 -> loop0
+loop0 -> polygon(end)
+
+{} -> polygon(20 7)

@@ -1,7 +1,7 @@
 #include "circle.fbp"
 
 @param {theta} (choice (30 45 60))
-limbs(start theta) -> turn2(turn theta)
+limbs2(start theta) -> turn2(turn theta)
 turn2 -> move2(move 10 0)
 move2 -> move3(move -10 1) 
 move3 -> turn3(turn (* -2 theta))

@@ -1,0 +1,7 @@
+#include "polygon.fbp"
+
+@param {side} (int (5 30))
+square(start side) -> p0(polygon side 4)
+p0 -> square(end)
+
+{} -> square(20)

@@ -157,7 +157,7 @@ class LoopNode(Node):
                 self.end = self.randomizer()
                 end = self.end
                 start = self.start
-                logger.info("randomizing end for", self.name, self.end)
+                logger.info(f"randomizing end for {self.name}: {self.end}")
 
     @property
     def parameters(self):
@@ -208,19 +208,14 @@ class MoveNode(Node):
         self.dist = evalf(dist, self.env)
         self.penup = bool(evalf(penup, self.env))
 
-        if (
-            False
-            and CONFIG.RANDOMIZE
-            and CONFIG.RUN
-            and parent_env.outer.name == "__global__"
-        ):
+        if CONFIG.RANDOMIZE and CONFIG.RUN and parent_env.outer.name == "__global__":
             if isconst(dist):
                 self.dist = self.dist_randomizer()
-                logger.info("randomizing dist for", self.name, self.dist)
+                logger.info(f"randomizing dist for {self.name}: {self.dist}")
                 dist = self.dist
             if isconst(penup):
                 self.penup = self.penup_randomizer()
-                logger.info("randomizing penup for", self.name, self.penup)
+                logger.info(f"randomizing penup for {self.name}: {self.penup}")
                 penup = self.penup
 
     @validate_message
@@ -261,15 +256,10 @@ class TurnNode(Node):
     def __init__(self, name, theta, parent_env):
         super().__init__(name, parent_env)
         self.theta = evalf(theta, self.env)
-        if (
-            False
-            and CONFIG.RANDOMIZE
-            and CONFIG.RUN
-            and parent_env.outer.name == "__global__"
-        ):
+        if CONFIG.RANDOMIZE and CONFIG.RUN and parent_env.outer.name == "__global__":
             if isconst(theta):
                 self.theta = self.randomizer()
-                logger.info("randomizing theta for", self.name, self.theta)
+                logger.info("randomizing theta for {self.name}: {self.theta}")
                 theta = self.theta
 
     @validate_message
