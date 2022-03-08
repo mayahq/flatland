@@ -511,9 +511,10 @@ def run_flow(env, flowname, rest):
         pos = (pos[0] % 128, pos[1] % 128)
         theta = TurnNode.randomizer()
 
-    data = dict(position=List(pos), theta=theta)
+    data = dict()
+    data["params"] = dict(position=List(pos), theta=theta)
     if CONFIG.RUN:
-        flow(data)
+        flow(data["params"])
         # print(flow)
     return flow, data
 
@@ -713,8 +714,8 @@ def evalf(x, env):  # noqa: C901
                     op,
                     flowname,
                     List(flow.parameters),
-                    start["position"],
-                    start["theta"],
+                    start["params"]["position"],
+                    start["params"]["theta"],
                 ]
             )
             x.clear()
