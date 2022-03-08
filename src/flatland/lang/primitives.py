@@ -184,9 +184,7 @@ class LoopNode(Node):
 
     def to_dict(self):
         a = super().to_dict()
-        a["start"] = self.start
-        a["end"] = self.end
-        a["varname"] = self.varname
+        a["params"] = dict(start=self.start, end=self.end, varname=self.varname)
         return a
 
     def __random_details__(self):
@@ -233,8 +231,7 @@ class MoveNode(Node):
 
     def to_dict(self):
         a = super().to_dict()
-        a["dist"] = self.dist
-        a["penup"] = self.penup
+        a["params"] = dict(dist=self.dist, penup=self.penup)
         return a
 
     def __random_details__(self):
@@ -273,7 +270,7 @@ class TurnNode(Node):
 
     def to_dict(self):
         a = super().to_dict()
-        a["theta"] = self.theta
+        a["params"] = dict(theta=self.theta)
         return a
 
     @classmethod
