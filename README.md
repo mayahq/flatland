@@ -4,7 +4,7 @@ Flatland is an environment for program synthesis experiments. The goal is to
 train models which can write programs controlling a ‘pen’ to draw any arbitrary
 target image. Methods to learn and generate programs in the Flatland flow-based
 "link" language may surface insights to tackle more complex real-world tasks as
-described in the paper "Towards a Measure of General Machine Intelligence" on
+described in our paper "Towards a Measure of General Machine Intelligence" on
 [arxiv:2109.12075][paper].
 
 ## Installation
